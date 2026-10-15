@@ -203,6 +203,10 @@ This public repository functions as the official **Project Registry, Architectur
 * **For technical manuals & ESC/POS pairing guides:** Visit [https://billmaster97.com/guide.html](https://billmaster97.com/guide.html).
 * **For volume licensing & commercial inquiries:** Contact [support@billmaster97.com](mailto:support@billmaster97.com).
 
+### 🏷️ Discover BillMaster97 Suite Tools
+
+`invoice-generator` • `billing-software` • `pos-system` • `thermal-printer` • `esc-pos` • `offline-first` • `pwa` • `gst-billing` • `receipt-maker` • `quotation-generator` • `purchase-order` • `payslip-generator` • `emi-calculator` • `currency-converter` • `barcode-generator` • `tax-calculator` • `accounting-software` • `retail-pos` • `client-side` • `small-business` • `loan-amortization` • `compound-interest` • `flat-vs-reducing-rate` • `payment-terms` • `late-fee-calculator` • `merchant-fee-audit` • `salary-calculator` • `paycheck-calculator` • `timesheet-calculator` • `freelance-rate-calculator` • `overtime-calculator` • `commission-calculator` • `cogs-valuation` • `breakeven-calculator` • `margin-calculator` • `discount-calculator` • `markdown-clearance` • `inventory-turnover` • `bluetooth-thermal-printer` • `qr-code-studio` • `pdf-invoice-export` • `cash-counter` • `bill-splitter` • `packing-slip` • `working-capital` • `cash-flow-runway` • `ebitda` • `ltv-cac` • `saas-mrr` • `invoice-factoring`
+
 <div align="center">
   <sub>© 2026 BillMaster97 Enterprise Suite. Architected with Sovereign Integrity by Narayan Modak. All Rights Reserved.</sub>
 </div>
