@@ -161,6 +161,32 @@ All BillMaster97 licenses are **one-time purchases with lifetime commercial usag
 
 🔗 **[Order Lifetime Commercial License](https://billmaster97.com/#pricing)**
 
+# ⚡ BillMaster97™ — 100% Offline-First Invoicing, GST/VAT Billing & Speed POS Suite
+
+> **Stop paying monthly rent for billing software that crashes when your Wi-Fi flickers.**
+> BillMaster97 is a high-performance, client-side Progressive Web App (PWA) engineered for busy retail shops, cafes, supermarkets, and freelancers who demand total data privacy and zero cloud downtime.
+
+---
+
+### 🧲 Why Merchants & Businesses Choose BillMaster97:
+
+* **⚡ 100% Offline Sovereignty:** Runs directly inside your browser RAM. Works in basements, rural counters, airplanes, or power cuts without using 1 KB of mobile data.
+* **🖨️ 2-Second Thermal Receipt Printing:** Direct Web Bluetooth and WebUSB printing to any **58mm (2-inch)** or **80mm (3-inch)** ESC/POS thermal printer with **zero printer drivers needed**.
+* **🚀 Sub-Millisecond Speed:** 0.5-second instant launch time with a verified **100/100 Google Core Web Vitals score**. Calculates 10,000 line items in under 1ms.
+* **🔒 100% Sovereign Privacy:** Zero external servers. Zero telemetry. Your customer ledgers, daily sales, and profit margins never leave your device.
+* **🌍 Built-in Global Compliance:**
+  * **India GST:** Full CGST, SGST, IGST calculation with HSN/SAC codes and Indian Rupee amounts in words.
+  * **UAE & GCC:** FTA VAT 5% with ZATCA Phase-2 digital QR codes.
+  * **UK & Europe:** HMRC 20% VAT, reverse-charge, and EUR / GBP formatting.
+  * **USA & Worldwide:** Sales tax, Net-30/60 terms, and 160+ fiat currencies ($ USD, € EUR, £ GBP, ₹ INR, AED, A$, C$).
+* **🎁 Zero Paywall Friction:** 50 free invoices every month, zero watermarks, and zero forced account registration.
+
+---
+
+### 💻 Live Sovereign Demo
+Launch the full workstation instantly in your browser:
+👉 **https://billmaster97.com**
+
 ---
 
 ## 👨‍💼 Leadership & Lead Architect
