@@ -1,60 +1,77 @@
+<div align="center">
+
 # BillMaster97™ Enterprise Suite
-### Sovereign Commercial Invoicing, Touch Speed POS, Multi-Language Voice Soundbox & ESC/POS Thermal Bridge
+### Sovereign Commercial Invoicing, Touch Speed POS, Multi-Language Soundbox & ESC/POS Thermal Bridge
 
-A high-performance, 100% offline-first commercial billing workstation and suite of 80+ business tools engineered for total data sovereignty. Eliminates recurring monthly POS subscription fees, cloud downtime, and ISP blackouts.
+**A high-performance, 100% offline-first commercial billing workstation and ecosystem of 80+ enterprise business tools engineered for total data sovereignty. Eliminates recurring monthly POS subscriptions, vendor cloud lock-in, and ISP downtime.**
 
-[![Web Application](https://img.shields.io/badge/Production%20Web%20App-billmaster97.com-0284c7?style=flat-square&logo=google-chrome&logoColor=white)](https://billmaster97.com)
-[![Version](https://img.shields.io/badge/Release-v2.2.3%20Production-10b981?style=flat-square)](https://billmaster97.com)
-[![Tools](https://img.shields.io/badge/Commercial%20Tools-80%2B%20Sovereign-38bdf8?style=flat-square)](https://billmaster97.com)
-[![Voice Soundbox](https://img.shields.io/badge/Voice%20Soundbox-44%20Languages-8b5cf6?style=flat-square)](https://billmaster97.com)
-[![License](https://img.shields.io/badge/Licensing-Lifetime%20Sovereign-f59e0b?style=flat-square)](https://billmaster97.com/#pricing)
-
-[Executive Summary](#-executive-summary) • [Core Architecture](#-core-architectural-pillars) • [80+ Tool Studios](#-comprehensive-commercial-modules--80-tools) • [Hardware Matrix](#-hardware-compatibility-matrix) • [Compliance](#-tax--regulatory-compliance) • [Licensing](#-commercial-licensing-tiers) • [Leadership](#-leadership--lead-architect)
+[![Production App](https://img.shields.io/badge/Production%20Web%20App-billmaster97.com-0284c7?style=for-the-badge&logo=google-chrome&logoColor=white)](https://billmaster97.com)
+[![Release](https://img.shields.io/badge/Release-v2.2.3%20Production-10b981?style=for-the-badge)](https://billmaster97.com)
+[![Performance](https://img.shields.io/badge/Core%20Web%20Vitals-100%2F100-success?style=for-the-badge)](https://billmaster97.com)
+[![Tools](https://img.shields.io/badge/Business%20Studios-80%2B%20Sovereign%20Tools-38bdf8?style=for-the-badge)](https://billmaster97.com)
+[![Voice Soundbox](https://img.shields.io/badge/Voice%20Soundbox-44%20Languages-8b5cf6?style=for-the-badge)](https://billmaster97.com)
+[![Privacy](https://img.shields.io/badge/Data%20Privacy-Zero%20Telemetry-f43f5e?style=for-the-badge)](https://billmaster97.com)
+[![Licensing](https://img.shields.io/badge/Licensing-Lifetime%20Sovereign-f59e0b?style=for-the-badge)](https://billmaster97.com/#pricing)
 
 ---
 
-## 📋 Executive Summary
+### 🌐 Direct Access Links
+**[🚀 Launch Full POS Workstation](https://billmaster97.com/app/)** • **[📄 Free Invoice Studio](https://billmaster97.com/free-invoice-generator/)** • **[🛠️ Browse 80+ Sovereign Tools](https://billmaster97.com)** • **[📚 User Guide & Documentation](https://billmaster97.com/guide.html)**
 
-Traditional retail Point-of-Sale (POS) software vendors lock merchants into coercive SaaS subscriptions ranging from **$99 to $299 per month ($1,200 to $3,500+ annually)**, while maintaining central control over transaction data. When internet connections fail or vendor servers crash during peak holiday rush hours, cash registers halt and sales are lost.
+---
 
-**BillMaster97™ was architected to solve this failure mode permanently.**
+[Executive Overview](#-executive-overview) • [Core Architecture](#-core-architectural-pillars) • [Soundbox Voice Identity](#-sovereign-multi-language-voice-soundbox-engine) • [80+ Tool Directory](#-the-5-master-studios-80-sovereign-tools) • [Hardware Matrix](#-hardware-compatibility-matrix) • [Compliance](#-tax--regulatory-compliance) • [Licensing](#-commercial-licensing-tiers) • [Leadership](#-leadership--lead-architect)
 
-By pairing modern browser standards (WebUSB, Web Bluetooth, Optical OCR Barcode Decoding, and Client-Side Cryptographic Storage) with local in-memory calculation routines, BillMaster97 executes commercial billing workflows with **0 ms cloud latency, 100% offline survivability, and zero mandatory server maintenance charges**.
+</div>
 
-### Architecture Comparison
+---
 
-| Feature / Metric | Traditional Cloud POS Systems | BillMaster97™ Sovereign Suite |
+## 📋 Executive Overview
+
+Traditional retail Point-of-Sale (POS) and invoicing software vendors lock merchants into coercive SaaS subscription models charging **$99 to $299 per month ($1,200 to $3,500+ annually)**, while maintaining centralized ownership over private transaction histories, customer ledgers, and profit margins. When cloud connections drop or vendor servers experience outages during critical peak trading hours, cash registers halt and revenue is lost.
+
+**BillMaster97™ was engineered to resolve this failure mode permanently.**
+
+By combining modern browser standards (**WebUSB**, **Web Bluetooth**, **Optical Camera OCR Barcode Decoding**, and **Client-Side Cryptographic IndexedDB Storage**) with local in-memory calculation algorithms, BillMaster97 executes commercial billing workflows with **0 ms cloud latency, 100% offline survivability, and zero mandatory subscription fees**.
+
+### Executive Feature Comparison Matrix
+
+| Commercial Feature | Traditional Cloud POS Systems | BillMaster97™ Sovereign Suite |
 | :--- | :--- | :--- |
-| **Annual Subscription Fees** | ❌ $1,200 – $3,500 / year recurring | ✅ **$0 Monthly Subscription (Lifetime License)** |
-| **Offline Survivability** | ❌ Freezes when internet drops | ✅ **100% Offline Autonomy (0 ms latency)** |
-| **Financial Ledger Privacy** | ❌ Vendor stores & mines commercial data | ✅ **100% Private Local Encrypted RAM (Zero Cloud)** |
-| **Hardware Thermal Printing** | ❌ Slow print dialog spooling | ✅ **0.02s Direct ESC/POS WebUSB & Bluetooth** |
-| **Audio Verification** | ❌ None (Silent screens only) | ✅ **Neural Multi-Lingual Soundbox (44 Languages)** |
-| **Integrated Tool Suite** | ❌ Expensive external 3rd-party software | ✅ **80+ Built-In Business, Tax & PDF Studios** |
+| **Annual Subscription Costs** | ❌ $1,200 – $3,500 / year recurring fees | ✅ **$0 Monthly Fee (Lifetime Sovereign Ownership)** |
+| **Offline Reliability** | ❌ Halts or freezes when internet drops | ✅ **100% Offline Autonomy (Sub-millisecond RAM calculation)** |
+| **Data Privacy & Control** | ❌ Vendor harvests & stores commercial data | ✅ **Zero Telemetry (100% Private Client-Side Encrypted Vault)** |
+| **Hardware Thermal Spooling** | ❌ Slow system print dialog prompts | ✅ **0.02s Direct ESC/POS Hardware Bridge (USB & Bluetooth)** |
+| **Audio Verification** | ❌ None (Silent screens only) | ✅ **Neural Multi-Lingual Soundbox (44 Global Languages)** |
+| **Integrated Tool Suite** | ❌ Costly add-ons or fragmented software | ✅ **80+ Built-In Business, Tax, PDF & Financial Studios** |
+| **Hardware Portability** | ❌ Restricted to proprietary hardware | ✅ **Universal: Runs on Chrome, Edge, Safari, Windows, macOS, Android, iOS** |
 
 ---
 
 ## ⚡ Core Architectural Pillars
 
-### 1. ⚡ Sovereign Offline-First Engine
-* **Pure Client-Side Computation:** Executes cart totals, dynamic split-taxes, per-item percentage discounts, and change calculations entirely in workstation memory.
-* **Zero Internet Dependency:** Operates seamlessly in underground basements, high-altitude locations, rural outposts, or during severe ISP disruptions.
+> [!IMPORTANT]
+> **100% Client-Side Sovereign Architecture:** BillMaster97 executes all calculations, cart operations, receipt generations, and inventory logs directly inside the device's browser memory sandbox. No financial data ever leaves the local machine.
+
+### 1. ⚡ Sovereign Offline-First Calculation Engine
+* **Pure Client-Side Computation:** Calculates cart totals, multi-tier split taxes (GST/VAT), per-item percentage discounts, and change calculations entirely in workstation RAM with sub-millisecond execution.
+* **Zero Internet Dependency:** Operates reliably in underground basements, high-altitude locations, rural counters, airplanes, or during severe telecom disruptions without consuming mobile data.
 
 ### 2. 🖨️ Direct Hardware Thermal Bridge (WebUSB & Web Bluetooth)
-* Eliminates standard browser print dialog delays through direct serial byte-stream communication via ESC/POS protocols.
-* Supports **58mm (2-inch)** and **80mm (3-inch)** continuous thermal roll printing with automated hardware paper cut pulses and cash drawer kick-out triggers.
+* Eliminates standard browser print dialog delays through direct serial byte-stream communication via native ESC/POS protocols.
+* Supports **58mm (2-inch)** and **80mm (3-inch)** continuous thermal roll printing with automated hardware paper-cut pulses and cash-drawer kick signals in **0.02 seconds**.
 
 ### 3. 🔊 Sovereign Multi-Language Voice Soundbox Engine
-* **Signature App Identity:** Authenticated multi-lingual audio verification engine featuring **Sweet Lady (`lady`)** and **Cashier Boy (`boy`)** neural announcer personas.
-* **44 Global Languages:** Real-time localized vocal announcements (*"Payment received of 1,475 rupees through BillMaster97"*) in English, Hindi, Bengali, Arabic, Spanish, French, German, Marathi, Gujarati, Tamil, Telugu, and 33 more.
-* **Anti-Fraud Security Chimes:** Melodic payment confirmation chimes with strict client-side print isolation shields that keep receipts 100% clean.
+* **Signature Brand Voice Identity:** Multi-lingual audio verification engine featuring **Sweet Lady (`lady`)** and **Cashier Boy (`boy`)** neural announcer personas.
+* **44 Global Languages:** Real-time localized vocal announcements (*"Payment received of 1,475 rupees through BillMaster97"*) in English, Hindi, Bengali, Arabic, Spanish, French, German, Marathi, Gujarati, Tamil, Telugu, Kannada, Malayalam, Punjabi, Urdu, and 29 more.
+* **Anti-Fraud Security Chimes:** Melodic payment confirmation chimes with client-side print isolation shields that keep receipts 100% clean.
 
 ### 4. 📷 Optical OCR Camera Barcode Scanner
-* Turns any standard workstation webcam, tablet camera, or smartphone sensor into an instant inventory lookup scanner without requiring external USB laser hardware.
+* Turns standard workstation webcams, tablet cameras, or smartphone sensors into real-time inventory lookup scanners without requiring external USB laser hardware.
 * Real-time multi-format decoder supporting **EAN-13, UPC-A, Code-128, Code-39, and QR Codes**.
 
 ### 5. 💬 WhatsApp Delivery Engine & Digital Khata Ledger
-* 1-tap dispatch of itemized receipts directly to customer WhatsApp accounts with formatted invoice totals and instant PDF download links.
+* 1-tap dispatch of itemized receipts directly to customer WhatsApp numbers with formatted totals and instant PDF download links.
 * Integrated aging debt radar (**1–15 Days, 16–30 Days, and 31+ Days Overdue**) with automated 1-click balance recovery reminders.
 
 ### 6. 🔒 Cashier PIN & Wholesale Margin Cloaking
@@ -62,27 +79,116 @@ By pairing modern browser standards (WebUSB, Web Bluetooth, Optical OCR Barcode 
 
 ---
 
-## 🧩 Comprehensive Commercial Modules & 80+ Tools
+## 🧩 The 5 Master Studios (80+ Sovereign Tools)
 
-BillMaster97 delivers a complete commercial ecosystem structured across **5 Master Hub Studios**:
+BillMaster97 integrates **80+ client-side business, calculation, and document tools** structured across 5 unified master studios:
 
-| Master Studio Hub | Core Focus | Target Workflows & Tools Included |
+<details open>
+<summary><b>Studio 1: Commercial Billing & Document Generation Hub (16 Tools)</b></summary>
+<br>
+
+| Tool | Core Capability | Live Web Endpoint |
 | :--- | :--- | :--- |
-| **1. Billing & Document Hub** | Complete commercial invoicing | Free Invoice Generator, Tax Invoice, Commercial Invoice, Construction Invoice, Consulting Invoice, Contractor Invoice, Freelance Invoice, Proforma Invoice, PO Maker, Quotation Studio, Receipt Generator, Payslip Studio. |
-| **2. PDF & Document Vault** | Zero-upload client-side file ops | Merge PDF, Split PDF, Compress PDF, PDF to Image, Image to PDF, Sign PDF, Watermark PDF, Protect PDF, Bank Statement to Excel/CSV Converter, COI (Certificate of Insurance) Auditor. |
-| **3. Financial & Investment Labs** | Lending, banking & interest | Loan Amortization Calculator, Mortgage Calculator, EMI Calculator, Compound Interest, Flat vs Reducing Rate, Currency Converter, Payment Terms Calculator, Late Fee Calculator. |
-| **4. Math, Tax & Unit Economics** | Profit, tax & inventory health | India GST Calculator, UAE VAT Calculator, Profit Margin Calculator, Break-Even Analyzer, COGS Valuation, Markup vs Margin, Cash-Flow Runway, EBITDA, LTV/CAC Calculator. |
-| **5. Business Operations & POS** | Counter ops & utility tools | Touch Speed POS, ESC/POS Thermal Bridge, Multi-Language Soundbox, Form 1099 Generator, Exif Metadata Remover, Optical Barcode OCR, QR Code Studio, Cash Counter, Timesheet Calculator. |
+| **Free Invoice Generator** | Full-featured professional invoice generator with live calculation | [`/free-invoice-generator/`](https://billmaster97.com/free-invoice-generator/) |
+| **Standard Invoice Generator** | Enterprise corporate billing with multi-currency & tax breakdown | [`/invoice-generator/`](https://billmaster97.com/invoice-generator/) |
+| **Commercial Invoice Generator** | International customs export invoices with freight & tariff codes | [`/commercial-invoice-generator/`](https://billmaster97.com/commercial-invoice-generator/) |
+| **Construction Invoice Generator** | Contractor phase billing, retainage & subcontractor cost tracking | [`/construction-invoice-generator/`](https://billmaster97.com/construction-invoice-generator/) |
+| **Consulting Invoice Generator** | Hourly billing, retainer tracking & professional service invoicing | [`/consulting-invoice-generator/`](https://billmaster97.com/consulting-invoice-generator/) |
+| **Contractor Invoice Generator** | Trade contractor billing with materials, labor & markup calculations | [`/contractor-invoice-generator/`](https://billmaster97.com/contractor-invoice-generator/) |
+| **Freelance Invoice Generator** | Project milestone billing, Net-30 terms & client payment links | [`/freelance-invoice-generator/`](https://billmaster97.com/freelance-invoice-generator/) |
+| **Proforma Invoice Generator** | Advance quotation & preliminary international sales invoicing | [`/proforma-invoice-generator/`](https://billmaster97.com/proforma-invoice-generator/) |
+| **Purchase Order (PO) Maker** | Official procurement purchase orders with vendor specs & approval | [`/purchase-order-generator/`](https://billmaster97.com/purchase-order-generator/) |
+| **Quotation & Estimate Maker** | Quick client price estimates with 1-click convert-to-invoice | [`/quotation-generator/`](https://billmaster97.com/quotation-generator/) |
+| **Thermal Receipt Maker** | 58mm/80mm ESC/POS thermal receipt formatter with barcode & QR | [`/receipt-maker/`](https://billmaster97.com/receipt-maker/) |
+| **Salary & Payslip Studio** | Professional employee salary slips with earnings, deductions & tax | [`/payslip-generator/`](https://billmaster97.com/payslip-generator/) |
+| **Packing Slip Generator** | Commercial shipping packing slips with SKU package breakdown | [`/packing-slip-generator/`](https://billmaster97.com/packing-slip-generator/) |
+| **Delivery Challan Studio** | Goods transit delivery challans with vehicle & consignment tracking | [`/delivery-challan-generator/`](https://billmaster97.com/delivery-challan-generator/) |
+| **Credit Note Studio** | Commercial sales return credits & customer account adjustments | [`/credit-note-generator/`](https://billmaster97.com/credit-note-generator/) |
+| **Debit Note Studio** | Vendor purchase return adjustments & debit allocations | [`/debit-note-generator/`](https://billmaster97.com/debit-note-generator/) |
+
+</details>
+
+<details open>
+<summary><b>Studio 2: PDF & Document Vault Operations (18 Tools)</b></summary>
+<br>
+
+| Tool | Core Capability | Live Web Endpoint |
+| :--- | :--- | :--- |
+| **Bank Statement to Excel/CSV** | Extract bank transactions to clean spreadsheets 100% in-browser | [`/bank-statement-to-excel-converter/`](https://billmaster97.com/bank-statement-to-excel-converter/) |
+| **COI (Certificate of Insurance) Auditor** | Audit commercial liability limits, policy coverage dates & endorsements | [`/coi-auditor/`](https://billmaster97.com/coi-auditor/) |
+| **Merge PDF Studio** | Combine multiple PDF invoices or reports into a single file client-side | [`/merge-pdf/`](https://billmaster97.com/merge-pdf/) |
+| **Split PDF Studio** | Extract specific page ranges or burst PDF sheets with 0 ms upload | [`/split-pdf/`](https://billmaster97.com/split-pdf/) |
+| **Compress PDF Studio** | Reduce PDF file size while preserving high-resolution print clarity | [`/compress-pdf/`](https://billmaster97.com/compress-pdf/) |
+| **PDF to Image Converter** | High-fidelity extraction of PDF pages to PNG or JPG | [`/pdf-to-image/`](https://billmaster97.com/pdf-to-image/) |
+| **Image to PDF Converter** | Instant packaging of scanned receipts, bills & photos into PDF | [`/image-to-pdf/`](https://billmaster97.com/image-to-pdf/) |
+| **Digital Sign PDF Studio** | Draw, upload or type sovereign digital signatures onto commercial docs | [`/sign-pdf/`](https://billmaster97.com/sign-pdf/) |
+| **Watermark PDF Studio** | Apply custom security, confidential, or draft stamps across docs | [`/watermark-pdf/`](https://billmaster97.com/watermark-pdf/) |
+| **Protect PDF Studio** | Cryptographic AES password encryption for sensitive invoices | [`/protect-pdf/`](https://billmaster97.com/protect-pdf/) |
+| **Unlock PDF Studio** | Remove owner permissions & decrypt authorized client-side PDFs | [`/unlock-pdf/`](https://billmaster97.com/unlock-pdf/) |
+| **Rotate PDF Studio** | Fix landscape/portrait page orientation across commercial scans | [`/rotate-pdf/`](https://billmaster97.com/rotate-pdf/) |
+
+</details>
+
+<details open>
+<summary><b>Studio 3: Financial & Investment Engineering Labs (18 Tools)</b></summary>
+<br>
+
+| Tool | Core Capability | Live Web Endpoint |
+| :--- | :--- | :--- |
+| **Dedicated Loan Calculator** | Commercial loan amortization schedules, interest breakdown & principal tables | [`/calculator-studio/loan-calculator/`](https://billmaster97.com/calculator-studio/loan-calculator/) |
+| **Mortgage Calculator** | Property loan payments with PMI, property tax & home insurance | [`/calculator-studio/mortgage-calculator/`](https://billmaster97.com/calculator-studio/mortgage-calculator/) |
+| **EMI Calculator** | Equal monthly installment schedules for vehicles, equipment & personal loans | [`/calculator-studio/emi-calculator/`](https://billmaster97.com/calculator-studio/emi-calculator/) |
+| **Compound Interest Studio** | Wealth growth compounding trajectories with monthly deposit models | [`/compound-interest-calculator/`](https://billmaster97.com/compound-interest-calculator/) |
+| **Flat vs Reducing Rate Calc** | Reveal true effective APR hiding behind flat-rate commercial loans | [`/calculator-studio/flat-vs-reducing-rate-calculator/`](https://billmaster97.com/calculator-studio/flat-vs-reducing-rate-calculator/) |
+| **Currency Converter** | Real-time exchange rate valuation across 160+ fiat currencies | [`/calculator-studio/currency-converter/`](https://billmaster97.com/calculator-studio/currency-converter/) |
+| **Late Fee & Interest Calculator** | Compute commercial interest penalties on overdue Net-30/60 accounts | [`/late-fee-calculator/`](https://billmaster97.com/late-fee-calculator/) |
+| **Payment Terms Calculator** | Analyze early settlement discount yields (e.g., 2/10 Net 30) | [`/payment-terms-calculator/`](https://billmaster97.com/payment-terms-calculator/) |
+
+</details>
+
+<details open>
+<summary><b>Studio 4: Math, Unit Economics & Tax Studios (16 Tools)</b></summary>
+<br>
+
+| Tool | Core Capability | Live Web Endpoint |
+| :--- | :--- | :--- |
+| **GST Tax Calculator** | India CGST, SGST, IGST inclusive & exclusive price calculation | [`/gst-calculator/`](https://billmaster97.com/gst-calculator/) |
+| **VAT Tax Calculator** | Global VAT computation for UK, EU, UAE, Saudi Arabia & Australia | [`/vat-calculator/`](https://billmaster97.com/vat-calculator/) |
+| **Profit Margin Calculator** | Gross margin, net margin, markup percentage & revenue targets | [`/profit-margin-calculator/`](https://billmaster97.com/profit-margin-calculator/) |
+| **Break-Even Analysis Studio** | Calculate exact unit sales & revenue required to achieve zero-loss | [`/breakeven-calculator/`](https://billmaster97.com/breakeven-calculator/) |
+| **COGS Valuation Calculator** | Cost of Goods Sold with FIFO, LIFO & weighted average modeling | [`/cogs-valuation-calculator/`](https://billmaster97.com/cogs-valuation-calculator/) |
+| **EBITDA Calculator** | Earnings Before Interest, Taxes, Depreciation & Amortization | [`/calculator-studio/ebitda-calculator/`](https://billmaster97.com/calculator-studio/ebitda-calculator/) |
+| **Cash-Flow Runway Analyzer** | Calculate enterprise burn rate and runway in months under stress | [`/cash-flow-runway-calculator/`](https://billmaster97.com/cash-flow-runway-calculator/) |
+| **Customer LTV / CAC Studio** | Lifetime Value to Customer Acquisition Cost unit economics | [`/ltv-cac-calculator/`](https://billmaster97.com/ltv-cac-calculator/) |
+
+</details>
+
+<details open>
+<summary><b>Studio 5: Business Operations & Utility Labs (14 Tools)</b></summary>
+<br>
+
+| Tool | Core Capability | Live Web Endpoint |
+| :--- | :--- | :--- |
+| **Form 1099-NEC/MISC Generator** | IRS nonemployee compensation tax form generator with clean print | [`/form-1099-generator/`](https://billmaster97.com/form-1099-generator/) |
+| **Exif Metadata Remover** | Strip GPS location, camera serials & device traces from invoice images | [`/exif-remover/`](https://billmaster97.com/exif-remover/) |
+| **QR Code Studio** | Generate custom UPI, URL, WiFi & crypto QR codes with logos | [`/qr-code-studio/`](https://billmaster97.com/qr-code-studio/) |
+| **Barcode Generator** | Generate high-density printable EAN-13, Code-128 & UPC-A labels | [`/barcode-generator/`](https://billmaster97.com/barcode-generator/) |
+| **Cash Counter & Calculator** | Retail drawer bill counting with multi-denomination tallying | [`/cash-counter/`](https://billmaster97.com/cash-counter/) |
+| **Timesheet & Overtime Calc** | Track employee shift hours, regular wage & overtime multipliers | [`/timesheet-calculator/`](https://billmaster97.com/timesheet-calculator/) |
+| **Freelance Rate Calculator** | Calculate billable hourly rate based on target net income & overhead | [`/freelance-rate-calculator/`](https://billmaster97.com/freelance-rate-calculator/) |
+| **Bill Splitter & Tip Calc** | Multi-party expense splitting with customizable tip allocations | [`/bill-splitter/`](https://billmaster97.com/bill-splitter/) |
+
+</details>
 
 ---
 
 ## 🖨️ Hardware Compatibility Matrix
 
-BillMaster97 is vendor-agnostic and pairs directly with industry-standard POS hardware:
+BillMaster97 is vendor-agnostic and pairs directly with industry-standard commercial POS hardware without requiring third-party print drivers:
 
-| Hardware Type | Supported Protocols | Certified Models |
+| Hardware Category | Supported Protocols | Certified Compatible Models |
 | :--- | :--- | :--- |
-| **Thermal Receipt Printers (80mm)** | ESC/POS via USB, Bluetooth, Network (Raw 9100) | Epson TM-T82, TVS RP3200, Everycom, Star TSP100, Rongta RP326 |
+| **Thermal Receipt Printers (80mm)** | ESC/POS via WebUSB, Bluetooth, LAN (Raw 9100) | Epson TM-T82, TVS RP3200, Everycom, Star TSP100, Rongta RP326 |
 | **Thermal Receipt Printers (58mm)** | ESC/POS via Web Bluetooth, WebUSB | Everycom 58mm, GOOJPRT, Zjiang 5802, Mini Bluetooth Terminals |
 | **Barcode & QR Scanners** | HID Keyboard Wedge, Virtual COM, WebCam OCR | Honeywell Voyager, Zebra DS2208, Inateck, Any HD Web Camera |
 | **Cash Drawers** | 24V / 12V Solenoid via RJ11/RJ12 Printer Kick | Posiflex, APG Cash Drawer, Generic Heavy-Duty Steel Drawers |
@@ -92,7 +198,7 @@ BillMaster97 is vendor-agnostic and pairs directly with industry-standard POS ha
 
 ## 🌍 Tax & Regulatory Compliance
 
-Engineered to fulfill invoicing regulations across **44 countries and territories**:
+Engineered to fulfill invoicing mandates across **44 countries and territories**:
 
 * 🇮🇳 **India:** Standard GST compliance (CGST, SGST, IGST, UTGST), mandatory HSN/SAC code classification, B2B reverse charge, and dynamic UPI QR codes.
 * 🇬🇧 / 🇪🇺 **United Kingdom & European Union:** Standard 20%, Reduced, and Exempt VAT layouts, Reverse Charge notes, and business VAT identification printing.
@@ -107,9 +213,9 @@ Engineered to fulfill invoicing regulations across **44 countries and territorie
 
 All BillMaster97 licenses are one-time purchases with lifetime commercial usage rights. **No recurring renewal fees, no server surcharge, and no forced upgrades.**
 
-| License Tier | Price (One-Time) | Workstation Capacity | Core Inclusions | Target Environment |
+| License Edition | Price (One-Time) | Workstation Capacity | Core Inclusions | Target Environment |
 | :--- | :---: | :---: | :--- | :--- |
-| **Pro Business Edition** | **$199.00 USD** | 1 Terminal | • Touch Speed POS<br>• 80mm ESC/POS Bridge<br>• WhatsApp Billing<br>• 80+ Sovereign Tools<br>• Lifetime Offline Access | Single Counter Retail Shops & Boutiques |
+| **Pro Business Edition** | **$199.00 USD** | 1 Terminal | • Touch Speed POS<br>• 80mm ESC/POS Bridge<br>• WhatsApp Billing<br>• 80+ Sovereign Tools<br>• Lifetime Offline Access | Single Counter Retail Stores & Boutiques |
 | **Enterprise Suite** | **$499.00 USD** | 5 Terminals | • Everything in Pro<br>• Multi-Counter Sync<br>• Cashier Margin Cloaking<br>• Voice Soundbox Suite<br>• Bulk CSV Catalog Sync | Multi-Counter Supermarkets & Pharmacies |
 | **Corporate Franchise Fleet** | **$999.00 USD** | 12 Terminals | • Everything in Enterprise<br>• Fleet License Master<br>• Multi-Store Deployment<br>• Custom Receipt Formats<br>• Priority Direct Engineering Line | Retail Franchises, Chains & Wholesalers |
 
@@ -125,7 +231,7 @@ Launch the full workstation instantly in your browser:
 👉 **[https://billmaster97.com/app/](https://billmaster97.com/app/)** *(Free instant access, zero registration required)*
 
 * 🌐 **Production Website:** [https://billmaster97.com](https://billmaster97.com)
-* 📄 **Free Invoice Generator:** [https://billmaster97.com/free-invoice-generator/](https://billmaster97.com/free-invoice-generator/)
+* 📄 **Free Invoice Studio:** [https://billmaster97.com/free-invoice-generator/](https://billmaster97.com/free-invoice-generator/)
 * 📚 **Technical Documentation & Guide:** [https://billmaster97.com/guide.html](https://billmaster97.com/guide.html)
 
 ---
