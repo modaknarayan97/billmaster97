@@ -3235,19 +3235,15 @@ body.light-mode code:not(.hljs) {
 </style>
 <style id="bm97-smart-ad-collapse">
 /* ════════════════════════════════════════════════════════════════
-   Smart AdSense Auto-Collapse Shield
-   Collapses empty ad rails & placeholder boxes before ads serve,
-   auto-displays cleanly the moment Google AdSense serves live ads.
+   Policy-Compliant AdSense Unfilled Collapse
+   Keeps containers measurable while Google AdSense loads, and hides
+   only after AdSense explicitly marks data-ad-status="unfilled".
    ════════════════════════════════════════════════════════════════ */
-.ad-rail-left:not(:has(iframe)),
-.ad-rail-right:not(:has(iframe)),
-.ad-box:not(:has(iframe)),
-.ad-box-skyscraper:not(:has(iframe)),
-.ad-box-leaderboard:not(:has(iframe)),
-.ad-slot:not(:has(iframe)),
-[class*="ad-box"]:not(:has(iframe)),
 ins.adsbygoogle[data-ad-status="unfilled"],
-ins.adsbygoogle:empty {
+.ad-box:has(ins.adsbygoogle[data-ad-status="unfilled"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])),
+.ad-slot:has(ins.adsbygoogle[data-ad-status="unfilled"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])),
+.ad-rail-left:has(ins.adsbygoogle[data-ad-status="unfilled"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])),
+.ad-rail-right:has(ins.adsbygoogle[data-ad-status="unfilled"]):not(:has(ins.adsbygoogle[data-ad-status="filled"])) {
   display: none !important;
   min-height: 0 !important;
   border: none !important;
@@ -4794,6 +4790,13 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       return res;
     }
 
+    function formatGlobalTierBadge(benchOrDown) {
+      const bench = (benchOrDown && typeof benchOrDown === 'object' && benchOrDown.tier)
+        ? benchOrDown
+        : computeRegionalPercentile(benchOrDown);
+      return bench.tier + ' · ' + bench.rankText;
+    }
+
     function buildLineAssessment(downVal, upVal, jitterStr, lossStr, loadedDownStr, loadedUpStr) {
       const d = parseFloat(downVal) || 0;
       const u = parseFloat(upVal) || 0;
@@ -4889,11 +4892,41 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       }
     }
 
+    function syncPdfDomFromSnapshot(snap) {
+      if (!snap) return;
+      const certIdElem = document.getElementById('pdf-cert-id');
+      if (certIdElem && snap.id) certIdElem.textContent = snap.id.replace('BM97-', 'BM97-CERT-');
+
+      const assess = buildLineAssessment(snap.down, snap.up, snap.jitter, snap.loss, snap.loadedDown, snap.loadedUp);
+      const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      setEl('pdf-val-down', snap.down);
+      setEl('pdf-val-up', snap.up);
+      setEl('pdf-val-up-sub', 'Mbps (' + assess.upSub + ')');
+      setEl('pdf-val-ping', snap.ping);
+      setEl('pdf-val-ping-sub', 'ms (' + snap.jitter + ' Jitter · ' + snap.loss + ' Loss)');
+      setEl('pdf-val-time', snap.auditTime);
+      setEl('pdf-val-isp', snap.isp);
+      setEl('pdf-val-ip', snap.ip);
+      setEl('pdf-val-asn', snap.asn);
+      setEl('pdf-val-node', snap.node);
+      setEl('pdf-val-coords', snap.coords);
+      setEl('pdf-val-server', snap.server);
+      setEl('pdf-val-loaded-down', snap.loadedDown + (snap.loadedDown !== '---' ? ' ms' : ''));
+      setEl('pdf-val-loaded-up', snap.loadedUp + (snap.loadedUp !== '---' ? ' ms' : ''));
+      setEl('pdf-val-bufferbloat', (snap.qoe && snap.qoe.stability && snap.qoe.stability.sub) || 'Verified');
+      setEl('pdf-val-benchmark-badge', '🏆 ' + formatGlobalTierBadge(assess.bench));
+      setEl('pdf-val-down-desc', snap.down);
+      setEl('pdf-val-bench-upload-label', assess.upBulletLabel);
+      setEl('pdf-val-up-desc', snap.up);
+      setEl('pdf-val-loss-note', assess.lossNote);
+      setEl('pdf-val-loaded-desc', snap.loadedDown);
+      setEl('pdf-val-loaded-extra', assess.jitterDesc + ' (' + snap.jitter + ')');
+      setEl('pdf-val-hash', 'SHA-256: ' + snap.hash);
+    }
+
     function applySnapshotToPdfModal(snap, verifiedState) {
       const modal = document.getElementById('modal-pdf-report');
       if (!modal) return;
-      const certIdElem = document.getElementById('pdf-cert-id');
-      if (certIdElem) certIdElem.textContent = snap.id.replace('BM97-', 'BM97-CERT-');
 
       const banner = document.getElementById('pdf-verify-banner');
       if (banner) {
@@ -4914,32 +4947,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         }
       }
 
-      const assess = buildLineAssessment(snap.down, snap.up, snap.jitter, snap.loss, snap.loadedDown, snap.loadedUp);
-      const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-      setEl('pdf-val-down', snap.down);
-      setEl('pdf-val-up', snap.up);
-      setEl('pdf-val-up-sub', 'Mbps (' + assess.upSub + ')');
-      setEl('pdf-val-ping', snap.ping);
-      setEl('pdf-val-ping-sub', 'ms (' + snap.jitter + ' Jitter · ' + snap.loss + ' Loss)');
-      setEl('pdf-val-time', snap.auditTime);
-      setEl('pdf-val-isp', snap.isp);
-      setEl('pdf-val-ip', snap.ip);
-      setEl('pdf-val-asn', snap.asn);
-      setEl('pdf-val-node', snap.node);
-      setEl('pdf-val-coords', snap.coords);
-      setEl('pdf-val-server', snap.server);
-      setEl('pdf-val-loaded-down', snap.loadedDown + (snap.loadedDown !== '---' ? ' ms' : ''));
-      setEl('pdf-val-loaded-up', snap.loadedUp + (snap.loadedUp !== '---' ? ' ms' : ''));
-      setEl('pdf-val-bufferbloat', snap.qoe.stability.sub || 'Verified');
-      setEl('pdf-val-benchmark-badge', '⭐ ' + assess.benchLabel + ' (' + (clientNetwork.serverCity || 'Global Edge') + ')');
-      setEl('pdf-val-down-desc', snap.down);
-      setEl('pdf-val-bench-upload-label', assess.upBulletLabel);
-      setEl('pdf-val-up-desc', snap.up);
-      setEl('pdf-val-loss-note', assess.lossNote);
-      setEl('pdf-val-loaded-desc', snap.loadedDown);
-      setEl('pdf-val-loaded-extra', assess.jitterDesc + ' (' + snap.jitter + ')');
-      setEl('pdf-val-hash', 'SHA-256: ' + snap.hash);
-
+      syncPdfDomFromSnapshot(snap);
       updateQoEUI(snap.down, snap.up, snap.ping, snap.loadedDown, snap.loadedUp);
       modal.classList.add('active');
     }
@@ -5478,7 +5486,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             color: cHeadBarBg
           });
           // Right Badge dynamically right-aligned against right border (x=540)
-          const netBadgeLeft = drawRight('Anycast Edge · ' + snap.protocol, 540, 623, fontBold, 8, cGreen);
+          const routeTag = (snap.server && snap.server.indexOf('M-Lab') !== -1) ? 'M-Lab Unicast · ' : 'Anycast Edge · ';
+          const netBadgeLeft = drawRight(routeTag + snap.protocol, 540, 623, fontBold, 8, cGreen);
           // Left Title automatically clamped before badge
           drawLeftBounded('NETWORK AUDIT & TELEMETRY VERIFICATION', 56, 623, netBadgeLeft - 15, fontBold, 9, cHeadBarText);
 
@@ -5523,7 +5532,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           // Line 5 (y: 516)
           const lblModeW = fontBold.widthOfTextAtSize('Connection Mode: ', 8);
           page.drawText('Connection Mode:', { x: 56, y: 516, size: 8, font: fontRegular, color: cTextMuted });
-          drawLeftBounded((typeof isMulti !== 'undefined' && !isMulti) ? 'Single-Socket TCP Stream' : 'Multi-Socket Parallel Stream', 56 + lblModeW, 516, 300, fontRegular, 8, cTextBody);
+          const activeConnMode = (typeof bmSettings !== 'undefined' && bmSettings.conn) ? bmSettings.conn : ((typeof isMulti !== 'undefined' && !isMulti) ? 'single' : 'multi');
+          const modeDisplayStr = activeConnMode === 'single' ? 'Single-Socket TCP Stream' : (activeConnMode === 'duplex' ? 'Full-Duplex Concurrent Stream' : 'Multi-Socket Parallel Stream');
+          drawLeftBounded(modeDisplayStr, 56 + lblModeW, 516, 300, fontRegular, 8, cTextBody);
 
           const lblProtW = fontBold.widthOfTextAtSize('Route Protocol: ', 8);
           page.drawText('Route Protocol:', { x: 310, y: 516, size: 8, font: fontRegular, color: cTextMuted });
@@ -5595,7 +5606,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             color: cHeadBarBg
           });
           // Right Benchmark dynamically computed & right-aligned
-          const benchBadgeLeft = drawRight(assess.benchLabel + ' (' + assess.bench.tier + ')', 540, 289, fontBold, 8.5, cAmber);
+          const benchBadgeLeft = drawRight(formatGlobalTierBadge(assess.bench), 540, 289, fontBold, 8.5, cAmber);
           // Left Title clamped
           drawLeftBounded('THROUGHPUT CURVES & REGIONAL BENCHMARK', 56, 289, benchBadgeLeft - 15, fontBold, 9, cHeadBarText);
 
@@ -6632,11 +6643,11 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         stScore * 0.10
       );
 
-      let overallTier = 'Tier 1 Ultra-Fiber · Flawless';
-      if (overallScore < 50) overallTier = 'Tier 5 Congested · High Latency';
-      else if (overallScore < 70) overallTier = 'Tier 4 Basic Line · High Latency';
-      else if (overallScore < 85) overallTier = 'Tier 3 Standard Broadband';
-      else if (overallScore < 95) overallTier = 'Tier 2 High-Speed Broadband';
+      let overallTier = 'Grade S · Ultra-Fiber Flawless';
+      if (overallScore < 50) overallTier = 'Grade D · Congested / High Latency';
+      else if (overallScore < 70) overallTier = 'Grade C · Basic Line / Elevated Ping';
+      else if (overallScore < 85) overallTier = 'Grade B · Standard Broadband';
+      else if (overallScore < 95) overallTier = 'Grade A · High-Speed Broadband';
 
       return {
         gaming: { score: gScore.toFixed(1), ratio: gScore / 10, sub: gSub },
@@ -6728,17 +6739,11 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         shareTw.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent('Measured ' + cleanDown + ' Mbps download and ' + cleanUp + ' Mbps upload on BillMaster97 Speedtest Pro!');
       }
 
-      // Update "Understand My Result" benchmark with real measured comparison
+      // Update "Understand My Result" benchmark with unified Global Bandwidth Tier
       const nperfBadgeText = document.getElementById('nperf-badge-text');
       if (nperfBadgeText) {
-        const dNum = parseFloat(downVal) || 0;
-        let pct = 38;
-        if (dNum >= 100) pct = 88;
-        else if (dNum >= 50) pct = 74;
-        else if (dNum >= 25) pct = 62;
-        else if (dNum >= 15) pct = 48;
-        const ordPct = pct + ((pct % 100 >= 11 && pct % 100 <= 13) ? 'th' : (['th', 'st', 'nd', 'rd'][pct % 10] || 'th'));
-        nperfBadgeText.textContent = '⭐ Global Speed Tier: ' + ordPct + ' Bracket · Neutral Edge (' + (clientNetwork.city || 'Anycast') + ')';
+        const bench = computeRegionalPercentile(downVal);
+        nperfBadgeText.textContent = '🏆 Global Bandwidth Tier: ' + formatGlobalTierBadge(bench) + ' (' + bench.percentile + '%) · Neutral Edge (' + (clientNetwork.city || 'Anycast') + ')';
       }
     }
 
@@ -7166,7 +7171,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       if (benchBadge) {
         const downCur = document.getElementById('disp-download')?.textContent || '0';
         const bench = computeRegionalPercentile(downCur);
-        benchBadge.textContent = '⭐ ' + bench.rankText + ' (' + (clientNetwork.serverCity || 'Global Edge') + ')';
+        benchBadge.textContent = '🏆 ' + formatGlobalTierBadge(bench);
       }
 
       // Update "Understand My Result" benchmark badge dynamically
@@ -8088,6 +8093,108 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       return Math.max(0.05, mbps || 0.05);
     }
 
+    function computeSlidingWindowMbps(checkpoints, windowMs) {
+      if (!checkpoints || checkpoints.length < 2) return 0;
+      const latest = checkpoints[checkpoints.length - 1];
+      let anchor = checkpoints[0];
+      for (let i = checkpoints.length - 2; i >= 0; i--) {
+        anchor = checkpoints[i];
+        if (latest.t - anchor.t >= (windowMs || 700)) break;
+      }
+      const dt = (latest.t - anchor.t) / 1000;
+      const db = latest.b - anchor.b;
+      if (dt <= 0.08 || db <= 0) return 0;
+      return Math.max(0.05, (db * 8) / (dt * 1000000));
+    }
+
+    function computePlateauMbps(checkpoints, totalBytes, warmupBytes, totalSec, sustainedSec, warmupPassed) {
+      const sustained = computeSustainedMbps(totalBytes, warmupBytes, totalSec, sustainedSec, warmupPassed);
+      if (!checkpoints || checkpoints.length < 6) return sustained;
+      const windowRates = [];
+      for (let i = 0; i < checkpoints.length - 1; i++) {
+        let j = i + 1;
+        while (j < checkpoints.length - 1 && (checkpoints[j].t - checkpoints[i].t) < 350) j++;
+        const dt = (checkpoints[j].t - checkpoints[i].t) / 1000;
+        const db = checkpoints[j].b - checkpoints[i].b;
+        if (dt >= 0.30 && db > 0) {
+          windowRates.push((db * 8) / (dt * 1000000));
+        }
+      }
+      if (windowRates.length < 6) return sustained;
+      windowRates.sort((a, b) => a - b);
+      // Trim bottom 25% slow-start ramp & top 10% transient cache bursts for true RFC sustained plateau
+      const startIdx = Math.floor(windowRates.length * 0.25);
+      const endIdx = Math.max(startIdx + 2, Math.ceil(windowRates.length * 0.90));
+      const slice = windowRates.slice(startIdx, endIdx);
+      const mean = slice.reduce((acc, v) => acc + v, 0) / slice.length;
+      return Math.max(0.05, Number.isFinite(mean) ? mean : sustained);
+    }
+
+    const BM97_UP_BLOBS = (typeof Blob !== 'undefined') ? {
+      s256k: { size: 262144, blob: new Blob([new Uint8Array(262144)]) },
+      s1m: { size: 1048576, blob: new Blob([new Uint8Array(1048576)]) },
+      s4m: { size: 4194304, blob: new Blob([new Uint8Array(4194304)]) }
+    } : null;
+
+    function pickAdaptiveUploadChunk(estMbps, maxSafeBytes) {
+      const safeCap = maxSafeBytes || 4194304;
+      if (!BM97_UP_BLOBS) return { size: 262144, blob: new Blob([new Uint8Array(262144)]) };
+      if (estMbps >= 35 && safeCap >= 4194304) return BM97_UP_BLOBS.s4m;
+      if (estMbps >= 5 && safeCap >= 1048576) return BM97_UP_BLOBS.s1m;
+      return BM97_UP_BLOBS.s256k;
+    }
+
+    async function probeMlabKernelLoss(countryCode, budgetMs) {
+      const capMs = Math.max(700, Math.min(2200, budgetMs || 1500));
+      const ctrl = new AbortController();
+      const locTimer = setTimeout(() => ctrl.abort(), Math.min(900, Math.floor(capMs * 0.6)));
+      try {
+        const query = countryCode ? ('?country=' + encodeURIComponent(countryCode)) : '';
+        const res = await fetch('https://locate.measurementlab.net/v2/nearest/ndt/ndt7' + query, { signal: ctrl.signal });
+        clearTimeout(locTimer);
+        if (!res.ok) return { ok: false };
+        const locJson = await res.json();
+        const dlUrl = locJson && locJson.results && locJson.results[0] && locJson.results[0].urls && locJson.results[0].urls['wss:///ndt/v7/download'];
+        if (!dlUrl || typeof WebSocket !== 'function') return { ok: false };
+        return await new Promise((resolve) => {
+          let resolved = false;
+          let bestLoss = null;
+          let gotSample = false;
+          let ws = null;
+          const finish = (ok) => {
+            if (resolved) return;
+            resolved = true;
+            clearTimeout(hardTimer);
+            try { if (ws) ws.close(); } catch (e) {}
+            resolve(ok && bestLoss !== null ? { ok: true, kernelLoss: bestLoss } : { ok: false });
+          };
+          const hardTimer = setTimeout(() => finish(gotSample), capMs);
+          try {
+            ws = new WebSocket(dlUrl, 'net.measurementlab.ndt.v7');
+            ws.binaryType = 'arraybuffer';
+            ws.onmessage = (ev) => {
+              if (typeof ev.data !== 'string') return;
+              try {
+                const m = JSON.parse(ev.data);
+                if (m.TCPInfo && m.TCPInfo.BytesSent > 0 && typeof m.TCPInfo.BytesRetrans === 'number') {
+                  bestLoss = Math.min(25, (m.TCPInfo.BytesRetrans / m.TCPInfo.BytesSent) * 100);
+                  gotSample = true;
+                  if (m.TCPInfo.BytesSent >= 131072) finish(true);
+                }
+              } catch (e) {}
+            };
+            ws.onclose = () => finish(gotSample);
+            ws.onerror = () => finish(gotSample);
+          } catch (e) {
+            finish(false);
+          }
+        });
+      } catch (e) {
+        clearTimeout(locTimer);
+        return { ok: false };
+      }
+    }
+
     function probeUdpStunReachability() {
       return new Promise((resolve) => {
         if (typeof RTCPeerConnection !== 'function') {
@@ -8405,7 +8512,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         detectClientNetwork();
       }
 
-      // ─── PHASE 1: REAL IDLE LATENCY (PING, p95 TAIL, RFC 3393 JITTER, UDP STUN, DNS & PROTOCOL) ───
+      // ─── PHASE 1: REAL IDLE LATENCY (20-WAVE PROBES, p95 TAIL, RFC 3393 JITTER, UDP STUN, DNS & PROTOCOL) ───
       let measuredPing = 24;
       let measuredLoss = 0.0;
       let measuredJitter = 1.5;
@@ -8413,7 +8520,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       let measuredDnsLabel = '<1ms';
       let p95Ping = 24;
       let lostProbes = 0;
-      const totalProbes = 12;
+      const totalSeqProbes = 12;
+      const burstWaveSize = 4;
+      const burstWaves = 2; // 12 sequential + 8 tight burst = 20 total probes
       const phase1Start = performance.now();
       const dispUdpStun = document.getElementById('disp-udp-stun');
       const dispP95 = document.getElementById('disp-p95-ping');
@@ -8423,7 +8532,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const activeEngine = bmSettings.serverEngine || 'cloudflare';
       if (dispUdpStun) dispUdpStun.textContent = 'Probing UDP...';
       if (dispP95) dispP95.textContent = '...';
-      if (dispLossLayer) dispLossLayer.textContent = 'HTTP Probe Drop';
+      if (dispLossLayer) dispLossLayer.textContent = '20-Wave Burst Loss';
       if (dispRoute) {
         const modeTxt = connMode === 'single' ? 'Single' : (connMode === 'duplex' ? 'Full-Duplex' : 'Multi');
         dispRoute.textContent = (activeEngine === 'mlab' ? ('M-Lab Unicast (' + (bmSettings.mlabCountry || 'IN') + ')') : 'Cloudflare Anycast') + ' · ' + modeTxt;
@@ -8435,12 +8544,12 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       let actualProbeCount = 0;
       try {
         const pingProbesOrdered = [];
-        for (let i = 0; i < totalProbes; i++) {
-          if (i >= 6 && (performance.now() - phase1Start) > 4500) break;
+        for (let i = 0; i < totalSeqProbes; i++) {
+          if (i >= 8 && (performance.now() - phase1Start) > 4200) break;
           actualProbeCount++;
           const t0 = performance.now();
           const probeAbort = new AbortController();
-          const probeTimer = setTimeout(() => probeAbort.abort(), 1600);
+          const probeTimer = setTimeout(() => probeAbort.abort(), 1200);
           try {
             const pRes = await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now() + '_' + i, {
               cache: 'no-store',
@@ -8456,10 +8565,36 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
               updateNetworkUI();
             }
             if (dispPing) dispPing.textContent = curPing;
-            playSpeedTone(240 + i * 28, 45, 'sine');
+            playSpeedTone(240 + i * 24, 40, 'sine');
           } catch (e) {
             clearTimeout(probeTimer);
             lostProbes++;
+          }
+        }
+        // Tight micro-burst probes for high-resolution packet loss sensitivity (remaining 8 probes)
+        if ((performance.now() - phase1Start) < 5200) {
+          for (let w = 0; w < burstWaves; w++) {
+            const waveJobs = [];
+            for (let b = 0; b < burstWaveSize; b++) {
+              actualProbeCount++;
+              const idxTag = 'w' + w + '_' + b;
+              waveJobs.push((async () => {
+                const pa = new AbortController();
+                const pt = setTimeout(() => pa.abort(), 1200);
+                try {
+                  const pr = await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now() + '_' + idxTag, {
+                    cache: 'no-store',
+                    signal: pa.signal
+                  });
+                  clearTimeout(pt);
+                  if (!pr.ok) lostProbes++;
+                } catch (e) {
+                  clearTimeout(pt);
+                  lostProbes++;
+                }
+              })());
+            }
+            await Promise.all(waveJobs);
           }
         }
         measuredLoss = ((lostProbes / Math.max(1, actualProbeCount)) * 100);
@@ -8619,11 +8754,17 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           }
         })();
 
-        // Centralized, collision-free measurement engine (RFC 6349 standard)
+        // Centralized, collision-free measurement engine (RFC 6349 plateau + dynamic scaling)
         let downWarmupBytes = 0;
         let downWarmupTime = 0;
         let downWarmupPassed = false;
         const WARMUP_DURATION = 1.6;
+        const downCheckpoints = [];
+        const duplexUpCheckpoints = [];
+        let latestDownMbps = 0;
+        let latestUpMbps = 0;
+        let maxSafeDlBytes = 50000000;
+        let maxSafeUpBytes = 4194304;
 
         const downSampler = setInterval(() => {
           const nowT = performance.now();
@@ -8635,10 +8776,14 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
               downWarmupBytes = totalDownloadedBytes;
               downWarmupTime = nowT;
             }
+            downCheckpoints.push({ t: nowT, b: totalDownloadedBytes });
             const sustainedBytes = totalDownloadedBytes - downWarmupBytes;
             const sustainedSec = (nowT - downWarmupTime) / 1000;
             if (sustainedSec > 0.1) {
-              const currentMbps = (sustainedBytes * 8) / (sustainedSec * 1000000);
+              const sustainedNow = (sustainedBytes * 8) / (sustainedSec * 1000000);
+              const winDown = computeSlidingWindowMbps(downCheckpoints, 750);
+              const currentMbps = winDown > 0 ? winDown : sustainedNow;
+              latestDownMbps = currentMbps;
               if (dispDown) dispDown.textContent = currentMbps.toFixed(2);
               downloadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(currentMbps.toFixed(2)) });
             }
@@ -8648,9 +8793,13 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
                 duplexUpWarmupBytes = duplexUpBytes;
                 duplexUpWarmupTime = nowT;
               }
+              duplexUpCheckpoints.push({ t: nowT, b: duplexUpBytes });
               const sUpSec = (nowT - duplexUpWarmupTime) / 1000;
               if (sUpSec > 0.1) {
-                const curUp = ((duplexUpBytes - duplexUpWarmupBytes) * 8) / (sUpSec * 1000000);
+                const susUp = ((duplexUpBytes - duplexUpWarmupBytes) * 8) / (sUpSec * 1000000);
+                const winUp = computeSlidingWindowMbps(duplexUpCheckpoints, 750);
+                const curUp = winUp > 0 ? winUp : susUp;
+                latestUpMbps = curUp;
                 if (dispUp) dispUp.textContent = curUp.toFixed(2);
                 uploadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(curUp.toFixed(2)) });
               }
@@ -8660,18 +8809,35 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             playSpeedTone(300 + Math.min(650, (parseFloat(dispDown?.textContent) || 10) * 8), 40, 'triangle');
           } else {
             const instantWarmup = elapsedSec > 0.1 ? (totalDownloadedBytes * 8) / (elapsedSec * 1000000) : 0;
+            latestDownMbps = instantWarmup;
+            if (isDuplex && elapsedSec > 0.2) {
+              latestUpMbps = (duplexUpBytes * 8) / (elapsedSec * 1000000);
+            }
             if (dispDown) dispDown.textContent = instantWarmup.toFixed(2);
           }
         }, 100);
 
         async function runDownloadStream(streamId) {
-          while (performance.now() - downStartTime < activeDownDurMs) {
+          let errRetries = 0;
+          while (performance.now() - downStartTime < activeDownDurMs && !downAbort.signal.aborted) {
+            const elDlMs = Math.max(1, performance.now() - downStartTime);
+            const estDlNow = Math.max(latestDownMbps, elDlMs >= 100 ? (totalDownloadedBytes * 8) / ((elDlMs / 1000) * 1000000) : 0);
+            let chunkSize = 5000000;
+            if (estDlNow > 150 && maxSafeDlBytes >= 50000000) chunkSize = 50000000;
+            else if ((estDlNow > 25 || totalDownloadedBytes > 3000000) && maxSafeDlBytes >= 25000000) chunkSize = 25000000;
             try {
-              const chunkSize = 5000000; // 5MB chunks
               const res = await fetch('https://speed.cloudflare.com/__down?bytes=' + chunkSize + '&t=' + Date.now() + '_' + streamId, {
                 cache: 'no-store',
                 signal: downAbort.signal
               });
+              if (!res.ok || !res.body) {
+                if (chunkSize > 5000000) {
+                  maxSafeDlBytes = chunkSize > 25000000 ? 25000000 : 5000000;
+                  continue;
+                }
+                if (++errRetries < 3) continue;
+                break;
+              }
               const reader = res.body.getReader();
               while (true) {
                 const { done, value } = await reader.read();
@@ -8685,18 +8851,20 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
                 }
               }
             } catch(e) {
-              break;
+              if (downAbort.signal.aborted) break;
+              if (chunkSize > 5000000) {
+                maxSafeDlBytes = chunkSize > 25000000 ? 25000000 : 5000000;
+                continue;
+              }
+              if (++errRetries >= 3) break;
             }
           }
         }
 
-        const upChunkSize = 262144; // 256KB payload chunk streamed via xhr.upload.onprogress
-        const upBlob = new Blob([new Uint8Array(upChunkSize)]);
-
-        function runUploadChunkXhr(startTs, durMs, abortCtrl, onDeltaBytes) {
+        function runUploadChunkXhr(startTs, durMs, abortCtrl, chunkSpec, onDeltaBytes) {
           return new Promise((resolve) => {
             if (performance.now() - startTs >= durMs || abortCtrl.signal.aborted) {
-              resolve(false);
+              resolve({ ok: false, aborted: true });
               return;
             }
             const xhr = new XMLHttpRequest();
@@ -8711,52 +8879,77 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
               if (performance.now() - startTs >= durMs) abortCtrl.abort();
             };
             xhr.onload = () => {
-              if (lastLoaded < upChunkSize) onDeltaBytes(upChunkSize - lastLoaded);
+              if (lastLoaded < chunkSpec.size) onDeltaBytes(chunkSpec.size - lastLoaded);
               abortCtrl.signal.removeEventListener('abort', onAbort);
-              resolve(true);
+              resolve({ ok: xhr.status >= 200 && xhr.status < 400, aborted: false });
             };
             xhr.onerror = xhr.onabort = () => {
               abortCtrl.signal.removeEventListener('abort', onAbort);
-              resolve(false);
+              resolve({ ok: false, aborted: Boolean(abortCtrl.signal.aborted || performance.now() - startTs >= durMs) });
             };
             xhr.open('POST', 'https://speed.cloudflare.com/__up?t=' + Date.now() + '_' + Math.random(), true);
-            xhr.send(upBlob);
+            xhr.send(chunkSpec.blob);
           });
         }
 
-        async function runDuplexUploadStream() {
+        async function runDuplexUploadStream(streamId) {
+          let errCount = 0;
           while (performance.now() - downStartTime < activeDownDurMs && !duplexUpAbort.signal.aborted) {
-            const ok = await runUploadChunkXhr(downStartTime, activeDownDurMs, duplexUpAbort, (d) => { duplexUpBytes += d; });
-            if (!ok || performance.now() - downStartTime >= activeDownDurMs) {
+            const chunkSpec = pickAdaptiveUploadChunk(latestUpMbps, maxSafeUpBytes);
+            const res = await runUploadChunkXhr(downStartTime, activeDownDurMs, duplexUpAbort, chunkSpec, (d) => { duplexUpBytes += d; });
+            if (res.aborted || performance.now() - downStartTime >= activeDownDurMs) {
               duplexUpAbort.abort();
               break;
+            }
+            if (!res.ok) {
+              if (chunkSpec.size > 262144) maxSafeUpBytes = chunkSpec.size > 1048576 ? 1048576 : 262144;
+              if (++errCount >= 3) break;
             }
           }
         }
 
-        // Launch streams honoring Connection Socket Mode: Multi (3), Single (1), or Full-Duplex (2 Down + 1 Up Concurrent)
+        async function launchDynamicExtraDownStreams() {
+          if (downAbort.signal.aborted) return;
+          await new Promise((r) => {
+            const tmr = setTimeout(r, 900);
+            downAbort.signal.addEventListener('abort', () => { clearTimeout(tmr); r(); }, { once: true });
+          });
+          if (!downAbort.signal.aborted && (latestDownMbps > 25 || totalDownloadedBytes > 3000000)) {
+            await Promise.all([runDownloadStream(5), runDownloadStream(6)]);
+          }
+        }
+
+        // Launch streams honoring Connection Socket Mode: Dynamic Multi (4->6 Down), Single (1), or Full-Duplex (3 Down + 2 Up Concurrent)
         try {
           if (isDuplex) {
-            await Promise.all([runDownloadStream(1), runDownloadStream(2), runDuplexUploadStream()]);
+            await Promise.all([
+              runDownloadStream(1), runDownloadStream(2), runDownloadStream(3),
+              runDuplexUploadStream(1), runDuplexUploadStream(2)
+            ]);
           } else if (connMode === 'single') {
             await runDownloadStream(1);
           } else {
-            await Promise.all([runDownloadStream(1), runDownloadStream(2), runDownloadStream(3)]);
+            await Promise.all([
+              runDownloadStream(1), runDownloadStream(2), runDownloadStream(3), runDownloadStream(4),
+              launchDynamicExtraDownStreams()
+            ]);
           }
         } catch(e) {}
         clearInterval(downSampler);
         pingDownRunning = false;
+        if (downWarmupPassed) downCheckpoints.push({ t: performance.now(), b: totalDownloadedBytes });
 
-        // RFC 6349 final sustained download throughput
+        // RFC 6349 final sustained plateau download throughput
         const totalDownSec = (performance.now() - downStartTime) / 1000;
         const finalDownSec = (performance.now() - (downWarmupPassed ? downWarmupTime : downStartTime)) / 1000;
-        finalDown = computeSustainedMbps(totalDownloadedBytes, downWarmupBytes, totalDownSec, finalDownSec, downWarmupPassed);
+        finalDown = computePlateauMbps(downCheckpoints, totalDownloadedBytes, downWarmupBytes, totalDownSec, finalDownSec, downWarmupPassed);
         if (dispDown) dispDown.textContent = finalDown.toFixed(2);
         downloadSamples.push({ t: Number(totalDownSec.toFixed(1)), v: Number(finalDown.toFixed(2)) });
 
         if (isDuplex) {
+          if (duplexUpWarmupPassed) duplexUpCheckpoints.push({ t: performance.now(), b: duplexUpBytes });
           const finalUpSecDup = (performance.now() - (duplexUpWarmupPassed ? duplexUpWarmupTime : downStartTime)) / 1000;
-          finalUp = computeSustainedMbps(duplexUpBytes, duplexUpWarmupBytes, totalDownSec, finalUpSecDup, duplexUpWarmupPassed);
+          finalUp = computePlateauMbps(duplexUpCheckpoints, duplexUpBytes, duplexUpWarmupBytes, totalDownSec, finalUpSecDup, duplexUpWarmupPassed);
           if (dispUp) dispUp.textContent = finalUp.toFixed(2);
           uploadSamples.push({ t: Number(totalDownSec.toFixed(1)), v: Number(finalUp.toFixed(2)) });
           drawThroughputCurves();
@@ -8764,12 +8957,14 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         } else {
           drawThroughputCurves();
 
-          // ─── PHASE 3: REAL UPLOAD TEST (with Loaded Latency) ───
+          // ─── PHASE 3: ADAPTIVE MULTI-STREAM UPLOAD TEST (256KB -> 1MB -> 4MB x 4 Streams + Loaded Latency) ───
           if (dispUp) dispUp.textContent = '0.00';
           uploadSamples = [{ t: 0, v: 0 }];
           const upStartTime = performance.now();
           let totalUploadedBytes = 0;
           const upAbort = new AbortController();
+          const upCheckpoints = [];
+          latestUpMbps = 0;
 
           let pingUpRunning = true;
           (async function probeUpLoadedPing() {
@@ -8810,25 +9005,38 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
                 upWarmupBytes = totalUploadedBytes;
                 upWarmupTime = nowT;
               }
+              upCheckpoints.push({ t: nowT, b: totalUploadedBytes });
               const sustainedUpBytes = totalUploadedBytes - upWarmupBytes;
               const sustainedUpSec = (nowT - upWarmupTime) / 1000;
               if (sustainedUpSec > 0.1) {
-                const currentUpMbps = (sustainedUpBytes * 8) / (sustainedUpSec * 1000000);
+                const susUpMbps = (sustainedUpBytes * 8) / (sustainedUpSec * 1000000);
+                const winUpMbps = computeSlidingWindowMbps(upCheckpoints, 750);
+                const currentUpMbps = winUpMbps > 0 ? winUpMbps : susUpMbps;
+                latestUpMbps = currentUpMbps;
                 if (dispUp) dispUp.textContent = currentUpMbps.toFixed(2);
                 uploadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(currentUpMbps.toFixed(2)) });
                 drawThroughputCurves();
                 drawQoERadar(0.65 + 0.35 * Math.min(1, elapsedSec / (upDurationMs / 1000)));
                 playSpeedTone(420 + Math.min(750, currentUpMbps * 10), 40, 'triangle');
               }
+            } else if (elapsedSec > 0.2) {
+              latestUpMbps = (totalUploadedBytes * 8) / (elapsedSec * 1000000);
+              if (dispUp) dispUp.textContent = latestUpMbps.toFixed(2);
             }
           }, 100);
 
           async function runUploadStream(streamId) {
+            let errCount = 0;
             while (performance.now() - upStartTime < upDurationMs && !upAbort.signal.aborted) {
-              const ok = await runUploadChunkXhr(upStartTime, upDurationMs, upAbort, (d) => { totalUploadedBytes += d; });
-              if (!ok || performance.now() - upStartTime >= upDurationMs) {
+              const chunkSpec = pickAdaptiveUploadChunk(latestUpMbps, maxSafeUpBytes);
+              const res = await runUploadChunkXhr(upStartTime, upDurationMs, upAbort, chunkSpec, (d) => { totalUploadedBytes += d; });
+              if (res.aborted || performance.now() - upStartTime >= upDurationMs) {
                 upAbort.abort();
                 break;
+              }
+              if (!res.ok) {
+                if (chunkSpec.size > 262144) maxSafeUpBytes = chunkSpec.size > 1048576 ? 1048576 : 262144;
+                if (++errCount >= 3) break;
               }
             }
           }
@@ -8837,19 +9045,35 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             if (connMode === 'single') {
               await runUploadStream(1);
             } else {
-              await Promise.all([runUploadStream(1), runUploadStream(2)]);
+              await Promise.all([
+                runUploadStream(1), runUploadStream(2), runUploadStream(3), runUploadStream(4)
+              ]);
             }
           } catch(e) {}
           clearInterval(upSampler);
           pingUpRunning = false;
+          if (upWarmupPassed) upCheckpoints.push({ t: performance.now(), b: totalUploadedBytes });
 
           const totalUpSec = (performance.now() - upStartTime) / 1000;
           const finalUpSec = (performance.now() - (upWarmupPassed ? upWarmupTime : upStartTime)) / 1000;
-          finalUp = computeSustainedMbps(totalUploadedBytes, upWarmupBytes, totalUpSec, finalUpSec, upWarmupPassed);
+          finalUp = computePlateauMbps(upCheckpoints, totalUploadedBytes, upWarmupBytes, totalUpSec, finalUpSec, upWarmupPassed);
           if (dispUp) dispUp.textContent = finalUp.toFixed(2);
           uploadSamples.push({ t: Number(totalUpSec.toFixed(1)), v: Number(finalUp.toFixed(2)) });
           drawThroughputCurves();
           drawQoERadar(1.0);
+        }
+
+        // Silent zero-dependency M-Lab TCPInfo kernel retransmission sweep (never steals download/upload bandwidth)
+        if (typeof probeMlabKernelLoss === 'function') {
+          if (dispLossLayer) dispLossLayer.textContent = 'Checking Kernel Loss...';
+          const kSweep = await probeMlabKernelLoss(bmSettings.mlabCountry || '', testProfile === '3s' ? 950 : 1500);
+          if (kSweep && kSweep.ok) {
+            measuredLoss = kSweep.kernelLoss;
+            if (dispLoss) dispLoss.textContent = measuredLoss.toFixed(1) + '%';
+            if (dispLossLayer) dispLossLayer.textContent = 'Kernel TCP Retrans (TCPInfo)';
+          } else {
+            if (dispLossLayer) dispLossLayer.textContent = '20-Wave Burst Loss';
+          }
         }
       }
 
@@ -8887,15 +9111,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         requestEdgeAttestation(snap);
       }
 
-      // Update PDF Report preview values
-      const pdfDown = document.getElementById('pdf-val-down'); if (pdfDown) pdfDown.textContent = finalDown.toFixed(2);
-      const pdfUp = document.getElementById('pdf-val-up'); if (pdfUp) pdfUp.textContent = finalUp.toFixed(2);
-      const pdfPing = document.getElementById('pdf-val-ping'); if (pdfPing) pdfPing.textContent = measuredPing.toFixed(1);
-      const pdfIsp = document.getElementById('pdf-val-isp'); if (pdfIsp) pdfIsp.textContent = clientNetwork.isp;
-      const pdfIp = document.getElementById('pdf-val-ip'); if (pdfIp) pdfIp.textContent = clientNetwork.ip;
-      const pdfServer = document.getElementById('pdf-val-server'); if (pdfServer) pdfServer.textContent = clientNetwork.server;
-      const pdfTime = document.getElementById('pdf-val-time'); if (pdfTime) pdfTime.textContent = tsFmt.auditStr;
-      const pdfHash = document.getElementById('pdf-val-hash'); if (pdfHash) pdfHash.textContent = 'SHA-256: ' + snap.hash;
+      // Sync full PDF Report preview values immediately on completion
+      syncPdfDomFromSnapshot(snap);
 
       // GA4 Speed Test Completed Event (Official Test Counter)
       try {
@@ -9978,29 +10195,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
          data-ad-slot="9981245012"></ins>
     <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
   </div>
-  <script>
-    (function(){
-      var lastActive = Date.now();
-      var refreshInterval = 75000;
-      ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function(e){
-        window.addEventListener(e, function(){ lastActive = Date.now(); }, { passive: true });
-      });
-      setInterval(function(){
-        if (!window.isTesting && document.visibilityState === 'visible' && (Date.now() - lastActive) < 120000) {
-          try {
-            var rails = document.querySelectorAll('.ad-box-skyscraper ins.adsbygoogle');
-            if (rails.length && window.adsbygoogle) {
-              rails.forEach(function(r){
-                if (r.getAttribute('data-adsbygoogle-status') === 'done') {
-                  (adsbygoogle = window.adsbygoogle || []).push({});
-                }
-              });
-            }
-          } catch(e) {}
-        }
-      }, refreshInterval);
-    })();
-  </script>
+  <!-- AdSense Policy Safe Unfilled Observer (No illegal timer re-push, no pre-load display:none) -->
 
 <script id="bm97-theme-sync">
 (function() {
@@ -10026,9 +10221,19 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
   function syncAdVisibility() {
     var adContainers = document.querySelectorAll('.ad-box, .ad-slot, .ad-rail-left, .ad-rail-right, [class*="ad-box"]');
     adContainers.forEach(function(el) {
-      var ins = el.querySelector('ins.adsbygoogle');
-      var hasLiveAd = ins && (ins.querySelector('iframe') || ins.getAttribute('data-ad-status') === 'filled');
-      if (!hasLiveAd) {
+      var slots = el.querySelectorAll('ins.adsbygoogle');
+      if (!slots.length) return;
+      var anyFilledOrPending = false;
+      var anyUnfilled = false;
+      slots.forEach(function(ins) {
+        var st = ins.getAttribute('data-ad-status');
+        if (st === 'unfilled') {
+          anyUnfilled = true;
+        } else {
+          anyFilledOrPending = true;
+        }
+      });
+      if (anyUnfilled && !anyFilledOrPending) {
         el.style.display = 'none';
       } else {
         el.style.display = '';
@@ -10043,7 +10248,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
   window.addEventListener('load', syncAdVisibility);
   if (window.MutationObserver) {
     var obs = new MutationObserver(syncAdVisibility);
-    obs.observe(document.body, { childList: true, subtree: true });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-ad-status'], subtree: true });
   }
 })();
 </script>
