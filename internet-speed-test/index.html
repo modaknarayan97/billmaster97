@@ -3568,7 +3568,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           <div class="pro-diag-strip" id="pro-diag-strip">
             <span>🛰️ UDP/STUN: <strong id="disp-udp-stun">Pending Test</strong></span>
             <span>📈 p95 Tail Ping: <strong id="disp-p95-ping">--</strong></span>
+            <span>🧪 Loss Layer: <strong id="disp-loss-layer">HTTP Probe Drop</strong></span>
             <span>🔀 Mode/Route: <strong id="disp-route-engine">Cloudflare Anycast · Multi</strong></span>
+            <span><a href="/internet-speed-test/methodology/" style="color: var(--cyan); text-decoration: none; font-weight: 700;">📖 RFC Methodology</a></span>
           </div>
 
           <!-- NPS Survey Rating Bar -->
@@ -4040,11 +4042,11 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         <div class="regional-rank-widget" id="regional-rank-widget" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
             <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700;">
-              <span>🏆 Regional Benchmark:</span>
+              <span>🏆 Global Bandwidth Tier:</span>
               <span id="rank-tier-badge" style="background: rgba(0, 210, 255, 0.15); color: var(--cyan); border: 1px solid rgba(0, 210, 255, 0.4); padding: 2px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase;">Tier 3 Standard</span>
             </div>
             <div style="font-size: 12px; color: var(--text-muted);" id="rank-percentile-text">
-              Faster than <strong style="color: var(--cyan);" id="rank-percentile-num">72%</strong> of broadband lines in your region
+              Global Tier Index: <strong style="color: var(--cyan);" id="rank-percentile-num">72%</strong> Bracket (Zero-DB Static Tiers)
             </div>
           </div>
           <div style="position: relative; height: 10px; background: linear-gradient(90deg, #ef4444 0%, #f59e0b 35%, #10b981 70%, #00d2ff 100%); border-radius: 5px; overflow: visible;">
@@ -4275,7 +4277,10 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
               <p class="trust-subtitle">100% Genuine Network Sockets • ITU-T Y.1540, ETSI EG 202 057, FCC MBA & RFC 6349 Compliant • Zero Obfuscation</p>
             </div>
           </div>
-          <div class="trust-header-right">
+          <div class="trust-header-right" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="/internet-speed-test/methodology/" class="trust-audit-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              📖 Open Methodology &amp; Verifier
+            </a>
             <button class="trust-audit-btn" onclick="openDevToolsProofModal()">
               🔍 Verify Math & Live Sockets
             </button>
@@ -4694,6 +4699,11 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       return sha256HexSync(canonical);
     }
 
+    window.BM97_ATTEST_CONFIG = window.BM97_ATTEST_CONFIG || {
+      endpoint: '',
+      publicKeyJwk: null
+    };
+
     function encodeAuditVerifyUrl(snap) {
       const compact = {
         i: snap.id, t: snap.utc, p: snap.ip, s: snap.isp, a: snap.asn, n: snap.node,
@@ -4701,9 +4711,51 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         g: snap.ping, ld: snap.loadedDown, lu: snap.loadedUp, j: snap.jitter, l: snap.loss,
         h: snap.hash
       };
+      if (snap.edgeSig) compact.sig = snap.edgeSig;
+      if (snap.edgeRay) compact.ray = snap.edgeRay;
       const json = JSON.stringify(compact);
       const b64 = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       return 'https://billmaster97.com/internet-speed-test/?verify=' + b64;
+    }
+
+    async function requestEdgeAttestation(snap) {
+      try {
+        const cfg = window.BM97_ATTEST_CONFIG;
+        if (!cfg || !cfg.endpoint || !snap || !snap.hash) return null;
+        const ac = new AbortController();
+        const tmr = setTimeout(() => ac.abort(), 3000);
+        const res = await fetch(cfg.endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: snap.id, utc: snap.utc, server: snap.server, hash: snap.hash }),
+          signal: ac.signal
+        });
+        clearTimeout(tmr);
+        if (!res.ok) return null;
+        const j = await res.json();
+        if (j && j.sig) {
+          snap.edgeSig = j.sig;
+          snap.edgeRay = j.ray || '';
+          snap.verifyUrl = encodeAuditVerifyUrl(snap);
+        }
+        return j;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function verifyEdgeAttestation(snap, sigB64Url, ray) {
+      try {
+        const cfg = window.BM97_ATTEST_CONFIG;
+        if (!cfg || !cfg.publicKeyJwk || !sigB64Url || !window.crypto || !crypto.subtle) return false;
+        const key = await crypto.subtle.importKey('jwk', cfg.publicKeyJwk, { name: 'Ed25519' }, false, ['verify']);
+        const msg = new TextEncoder().encode([snap.id, snap.utc, snap.server, snap.hash, ray || ''].join('|'));
+        const pad = sigB64Url.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((sigB64Url.length + 3) % 4);
+        const raw = Uint8Array.from(atob(pad), c => c.charCodeAt(0));
+        return await crypto.subtle.verify({ name: 'Ed25519' }, key, raw, msg);
+      } catch (e) {
+        return false;
+      }
     }
 
     function formatAuditTimestamps(dateObj) {
@@ -4917,7 +4969,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           loadedUp: decoded.lu || '---',
           jitter: decoded.j || '0.00ms',
           loss: decoded.l || '0.0%',
-          hash: decoded.h || ''
+          hash: decoded.h || '',
+          edgeSig: decoded.sig || '',
+          edgeRay: decoded.ray || ''
         };
         snap.qoe = computeGenuineQoE(snap.down, snap.up, snap.ping, snap.loadedDown, snap.loadedUp);
         const expected = computeCanonicalDigest(snap);
@@ -4925,6 +4979,13 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         snap.verifyUrl = window.location.href;
         lastTelemetrySnapshot = snap;
         applySnapshotToPdfModal(snap, isValid ? 'valid' : 'invalid');
+        if (isValid && snap.edgeSig) {
+          verifyEdgeAttestation(snap, snap.edgeSig, snap.edgeRay).then(edgeOk => {
+            if (!edgeOk) return;
+            const b = document.getElementById('pdf-verify-banner');
+            if (b) b.textContent = '✓ SHA-256 + EDGE Ed25519 ATTESTATION VERIFIED (' + snap.utc + (snap.edgeRay ? ' · CF Ray ' + snap.edgeRay : '') + ').';
+          });
+        }
       } catch (e) {
         console.warn('Invalid verification link:', e);
       }
@@ -6676,7 +6737,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         else if (dNum >= 50) pct = 74;
         else if (dNum >= 25) pct = 62;
         else if (dNum >= 15) pct = 48;
-        nperfBadgeText.textContent = '⭐⭐ Better than ' + pct + '% in your region (' + (clientNetwork.city || 'West Bengal') + ')';
+        const ordPct = pct + ((pct % 100 >= 11 && pct % 100 <= 13) ? 'th' : (['th', 'st', 'nd', 'rd'][pct % 10] || 'th'));
+        nperfBadgeText.textContent = '⭐ Global Speed Tier: ' + ordPct + ' Bracket · Neutral Edge (' + (clientNetwork.city || 'Anycast') + ')';
       }
     }
 
@@ -8355,11 +8417,13 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const phase1Start = performance.now();
       const dispUdpStun = document.getElementById('disp-udp-stun');
       const dispP95 = document.getElementById('disp-p95-ping');
+      const dispLossLayer = document.getElementById('disp-loss-layer');
       const dispRoute = document.getElementById('disp-route-engine');
       const connMode = bmSettings.conn || 'multi';
       const activeEngine = bmSettings.serverEngine || 'cloudflare';
       if (dispUdpStun) dispUdpStun.textContent = 'Probing UDP...';
       if (dispP95) dispP95.textContent = '...';
+      if (dispLossLayer) dispLossLayer.textContent = 'HTTP Probe Drop';
       if (dispRoute) {
         const modeTxt = connMode === 'single' ? 'Single' : (connMode === 'duplex' ? 'Full-Duplex' : 'Multi');
         dispRoute.textContent = (activeEngine === 'mlab' ? ('M-Lab Unicast (' + (bmSettings.mlabCountry || 'IN') + ')') : 'Cloudflare Anycast') + ' · ' + modeTxt;
@@ -8489,6 +8553,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           if (mlabRes.kernelLoss !== null && mlabRes.kernelLoss !== undefined) {
             measuredLoss = mlabRes.kernelLoss;
             if (dispLoss) dispLoss.textContent = measuredLoss.toFixed(1) + '%';
+            if (dispLossLayer) dispLossLayer.textContent = 'Kernel TCP Retrans (TCPInfo)';
           }
           if (dispDown) dispDown.textContent = finalDown.toFixed(2);
           if (dispUp) dispUp.textContent = finalUp.toFixed(2);
@@ -8815,9 +8880,12 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       // Play High-Tech Completion Chime
       playCompletionChime();
 
-      // Build immutable canonical telemetry snapshot & SHA-256 hash
+      // Build immutable canonical telemetry snapshot & SHA-256 hash (+ optional Edge Ed25519 attestation if configured)
       lastTelemetrySnapshot = null;
       const snap = getOrCreateTelemetrySnapshot();
+      if (window.BM97_ATTEST_CONFIG && window.BM97_ATTEST_CONFIG.endpoint) {
+        requestEdgeAttestation(snap);
+      }
 
       // Update PDF Report preview values
       const pdfDown = document.getElementById('pdf-val-down'); if (pdfDown) pdfDown.textContent = finalDown.toFixed(2);
@@ -9918,7 +9986,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         window.addEventListener(e, function(){ lastActive = Date.now(); }, { passive: true });
       });
       setInterval(function(){
-        if (document.visibilityState === 'visible' && (Date.now() - lastActive) < 120000) {
+        if (!window.isTesting && document.visibilityState === 'visible' && (Date.now() - lastActive) < 120000) {
           try {
             var rails = document.querySelectorAll('.ad-box-skyscraper ins.adsbygoogle');
             if (rails.length && window.adsbygoogle) {
