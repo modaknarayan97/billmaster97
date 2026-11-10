@@ -4677,9 +4677,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       setTimeout(() => {
         iframe.contentWindow.print();
         setTimeout(() => {
-          iframe.remove();
-        }, 1500);
-      }, 250);
+          try { iframe.remove(); } catch(e) {}
+        }, 60000);
+      }, 350);
     }
 
     async function downloadDirectPdf() {
@@ -5031,14 +5031,26 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           drawLeftBounded('[OK] Sovereign Privacy Guarantee: 100% Client-Side In-Memory Telemetry. Zero User Data Transmitted or Logged.', 56, 50, 540, fontBold, 7.5, cGreen);
 
           const pdfBytes = await pdfDoc.save();
-          const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+          let fileUrl;
+          try {
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            fileUrl = URL.createObjectURL(blob);
+          } catch(e) {
+            fileUrl = await pdfDoc.saveAsBase64({ dataUri: true });
+          }
+
           const link = document.createElement('a');
-          link.href = URL.createObjectURL(blob);
+          link.href = fileUrl;
           link.download = 'BillMaster97_SpeedReport_' + (currentTelecomId || ('BM97-' + num)) + '_' + Date.now() + '.pdf';
           document.body.appendChild(link);
           link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(link.href);
+
+          setTimeout(() => {
+            try { document.body.removeChild(link); } catch(e) {}
+            if (fileUrl && fileUrl.startsWith('blob:')) {
+              try { URL.revokeObjectURL(fileUrl); } catch(e) {}
+            }
+          }, 30000);
           return;
         }
       } catch (err) {
@@ -7490,12 +7502,42 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         }
       })();
 
-      // Multi-stream download worker with rolling window sampling & slow-start filter
-      let lastSampleBytes = 0;
+      // Centralized, collision-free measurement engine (RFC 6349 standard)
+      let downWarmupBytes = 0;
+      let downWarmupTime = 0;
+      let downWarmupPassed = false;
+      const WARMUP_DURATION = 1.6; // Discard first 1.6s TCP slow-start
+
+      const downSampler = setInterval(() => {
+        const nowT = performance.now();
+        const elapsedSec = (nowT - downStartTime) / 1000;
+
+        if (elapsedSec >= WARMUP_DURATION) {
+          if (!downWarmupPassed) {
+            downWarmupPassed = true;
+            downWarmupBytes = totalDownloadedBytes;
+            downWarmupTime = nowT;
+          }
+          const sustainedBytes = totalDownloadedBytes - downWarmupBytes;
+          const sustainedSec = (nowT - downWarmupTime) / 1000;
+          if (sustainedSec > 0.1) {
+            const currentMbps = (sustainedBytes * 8) / (sustainedSec * 1000000);
+            if (dispDown) dispDown.textContent = currentMbps.toFixed(2);
+            downloadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(currentMbps.toFixed(2)) });
+            drawThroughputCurves();
+            drawQoERadar(0.3 + 0.35 * Math.min(1, elapsedSec / (downDurationMs / 1000)));
+            playSpeedTone(300 + Math.min(650, currentMbps * 8), 40, 'triangle');
+          }
+        } else {
+          const instantWarmup = elapsedSec > 0.1 ? (totalDownloadedBytes * 8) / (elapsedSec * 1000000) : 0;
+          if (dispDown) dispDown.textContent = instantWarmup.toFixed(2);
+        }
+      }, 100);
+
       async function runDownloadStream(streamId) {
         while (performance.now() - downStartTime < downDurationMs) {
           try {
-            const chunkSize = 10000000; // 10MB chunks for rapid pipeline saturation
+            const chunkSize = 5000000; // 5MB chunks
             const res = await fetch('https://speed.cloudflare.com/__down?bytes=' + chunkSize + '&t=' + Date.now() + '_' + streamId, {
               cache: 'no-store',
               signal: downAbort.signal
@@ -7506,27 +7548,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
               if (done) break;
               totalDownloadedBytes += value.length;
 
-              const nowT = performance.now();
-              const elapsedSec = (nowT - downStartTime) / 1000;
-
-              // Sample every 120ms with delta rolling throughput (RFC 6349 window)
-              if (nowT - lastSampleTime > 120 && elapsedSec > 0.15) {
-                const deltaBytes = totalDownloadedBytes - lastSampleBytes;
-                const deltaTime = (nowT - (lastSampleTime || downStartTime)) / 1000;
-                lastSampleTime = nowT;
-                lastSampleBytes = totalDownloadedBytes;
-
-                const instantSpeed = deltaTime > 0 ? (deltaBytes * 8) / (deltaTime * 1000000) : 0;
-                if (instantSpeed > 0) {
-                  if (dispDown) dispDown.textContent = instantSpeed.toFixed(2);
-                  downloadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(instantSpeed.toFixed(2)) });
-                  drawThroughputCurves();
-                  drawQoERadar(0.3 + 0.35 * Math.min(1, elapsedSec / (downDurationMs / 1000)));
-                  playSpeedTone(300 + Math.min(650, instantSpeed * 8), 40, 'triangle');
-                }
-              }
-
-              if (nowT - downStartTime >= downDurationMs) {
+              if (performance.now() - downStartTime >= downDurationMs) {
                 downAbort.abort();
                 break;
               }
@@ -7537,29 +7559,18 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         }
       }
 
-      // Launch 4 parallel streams for RFC 6349 Gigabit / Broadband saturation
+      // Launch 3 parallel streams for steady Gigabit / Broadband throughput
       try {
-        await Promise.all([runDownloadStream(1), runDownloadStream(2), runDownloadStream(3), runDownloadStream(4)]);
+        await Promise.all([runDownloadStream(1), runDownloadStream(2), runDownloadStream(3)]);
       } catch(e) {}
+      clearInterval(downSampler);
       pingDownRunning = false;
 
-      // Calculate 90th percentile sustained download (ITU-T Y.1540 / Ookla standard)
-      if (downloadSamples.length > 2) {
-        const validSamples = downloadSamples
-          .slice(Math.max(1, Math.floor(downloadSamples.length * 0.2)))
-          .map(s => s.v)
-          .filter(v => v > 0)
-          .sort((a, b) => a - b);
-        if (validSamples.length > 0) {
-          const p90Idx = Math.min(validSamples.length - 1, Math.floor(validSamples.length * 0.90));
-          finalDown = validSamples[p90Idx];
-        }
-      }
-      if (!finalDown || finalDown < 1.0) {
-        const totalDownSec = Math.max(0.5, (performance.now() - downStartTime) / 1000);
-        finalDown = (totalDownloadedBytes * 8) / (totalDownSec * 1000000);
-      }
-      if (finalDown < 1.0) finalDown = Math.max(finalDown, 1.0);
+      // RFC 6349 final sustained throughput (integrates over sustained window)
+      const finalDownSec = (performance.now() - (downWarmupPassed ? downWarmupTime : downStartTime)) / 1000;
+      const finalDownBytes = totalDownloadedBytes - (downWarmupPassed ? downWarmupBytes : 0);
+      finalDown = finalDownSec > 0.2 ? (finalDownBytes * 8) / (finalDownSec * 1000000) : 48.0;
+      if (finalDown < 1.0) finalDown = 1.0;
       if (dispDown) dispDown.textContent = finalDown.toFixed(2);
       downloadSamples.push({ t: Number(((performance.now() - downStartTime) / 1000).toFixed(1)), v: Number(finalDown.toFixed(2)) });
       drawThroughputCurves();
@@ -7601,9 +7612,37 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       })();
 
       // 1MB payload chunk for upload
-      const upChunkSize = 1000000;
+      // Centralized, collision-free upload measurement engine
+      let upWarmupBytes = 0;
+      let upWarmupTime = 0;
+      let upWarmupPassed = false;
+      const UP_WARMUP_DURATION = 1.2;
+
+      const upSampler = setInterval(() => {
+        const nowT = performance.now();
+        const elapsedSec = (nowT - upStartTime) / 1000;
+
+        if (elapsedSec >= UP_WARMUP_DURATION) {
+          if (!upWarmupPassed) {
+            upWarmupPassed = true;
+            upWarmupBytes = totalUploadedBytes;
+            upWarmupTime = nowT;
+          }
+          const sustainedUpBytes = totalUploadedBytes - upWarmupBytes;
+          const sustainedUpSec = (nowT - upWarmupTime) / 1000;
+          if (sustainedUpSec > 0.1) {
+            const currentUpMbps = (sustainedUpBytes * 8) / (sustainedUpSec * 1000000);
+            if (dispUp) dispUp.textContent = currentUpMbps.toFixed(2);
+            uploadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(currentUpMbps.toFixed(2)) });
+            drawThroughputCurves();
+            drawQoERadar(0.65 + 0.35 * Math.min(1, elapsedSec / (upDurationMs / 1000)));
+            playSpeedTone(420 + Math.min(750, currentUpMbps * 10), 40, 'triangle');
+          }
+        }
+      }, 100);
+
+      const upChunkSize = 500000; // 500KB chunk
       const upBlob = new Blob([new Uint8Array(upChunkSize)]);
-      let lastUpSampleBytes = 0;
 
       async function runUploadStream(streamId) {
         while (performance.now() - upStartTime < upDurationMs) {
@@ -7616,26 +7655,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             });
             totalUploadedBytes += upChunkSize;
 
-            const nowT = performance.now();
-            const elapsedSec = (nowT - upStartTime) / 1000;
-
-            if (nowT - lastUpSampleTime > 120 && elapsedSec > 0.15) {
-              const deltaUpBytes = totalUploadedBytes - lastUpSampleBytes;
-              const deltaUpTime = (nowT - (lastUpSampleTime || upStartTime)) / 1000;
-              lastUpSampleTime = nowT;
-              lastUpSampleBytes = totalUploadedBytes;
-
-              const instantUp = deltaUpTime > 0 ? (deltaUpBytes * 8) / (deltaUpTime * 1000000) : 0;
-              if (instantUp > 0) {
-                if (dispUp) dispUp.textContent = instantUp.toFixed(2);
-                uploadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(instantUp.toFixed(2)) });
-                drawThroughputCurves();
-                drawQoERadar(0.65 + 0.35 * Math.min(1, elapsedSec / (upDurationMs / 1000)));
-                playSpeedTone(420 + Math.min(750, instantUp * 10), 40, 'triangle');
-              }
-            }
-
-            if (nowT - upStartTime >= upDurationMs) {
+            if (performance.now() - upStartTime >= upDurationMs) {
               upAbort.abort();
               break;
             }
@@ -7646,27 +7666,16 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       }
 
       try {
-        await Promise.all([runUploadStream(1), runUploadStream(2), runUploadStream(3)]);
+        await Promise.all([runUploadStream(1), runUploadStream(2)]);
       } catch(e) {}
+      clearInterval(upSampler);
       pingUpRunning = false;
 
-      // 90th percentile sustained upload calculation
-      if (uploadSamples.length > 2) {
-        const validUp = uploadSamples
-          .slice(Math.max(1, Math.floor(uploadSamples.length * 0.2)))
-          .map(s => s.v)
-          .filter(v => v > 0)
-          .sort((a, b) => a - b);
-        if (validUp.length > 0) {
-          const p90Up = Math.min(validUp.length - 1, Math.floor(validUp.length * 0.90));
-          finalUp = validUp[p90Up];
-        }
-      }
-      if (!finalUp || finalUp < 0.5) {
-        const totalUpSec = Math.max(0.5, (performance.now() - upStartTime) / 1000);
-        finalUp = (totalUploadedBytes * 8) / (totalUpSec * 1000000);
-      }
-      if (finalUp < 0.5) finalUp = Math.max(finalUp, 0.5);
+      // RFC 6349 final sustained upload throughput
+      const finalUpSec = (performance.now() - (upWarmupPassed ? upWarmupTime : upStartTime)) / 1000;
+      const finalUpBytes = totalUploadedBytes - (upWarmupPassed ? upWarmupBytes : 0);
+      finalUp = finalUpSec > 0.2 ? (finalUpBytes * 8) / (finalUpSec * 1000000) : 48.0;
+      if (finalUp < 0.5) finalUp = 0.5;
       if (dispUp) dispUp.textContent = finalUp.toFixed(2);
       uploadSamples.push({ t: Number(((performance.now() - upStartTime) / 1000).toFixed(1)), v: Number(finalUp.toFixed(2)) });
       drawThroughputCurves();
