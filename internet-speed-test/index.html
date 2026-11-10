@@ -1152,6 +1152,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 6px 14px;
     }
     .pdf-cert-box .pdf-cert-footer strong {
       color: #0f172a;
@@ -1159,6 +1161,7 @@
     .pdf-cert-box .pdf-cert-footer .hash {
       color: #0284c7;
       font-weight: 700;
+      word-break: break-all;
     }
 
     /* ========================================================
@@ -4403,11 +4406,16 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
     function computeRegionalPercentile(downSpeed) {
       const speed = parseFloat(downSpeed) || 0;
-      if (speed < 10) return { percentile: Math.max(12, Math.round(speed * 2.5)), tier: 'Tier 1 Entry DSL', badgeColor: '#ef4444', badgeBg: 'rgba(239, 68, 68, 0.15)', needlePct: Math.max(8, Math.round(speed * 2)) };
-      if (speed < 30) return { percentile: Math.round(25 + ((speed - 10) / 20) * 35), tier: 'Tier 2 Basic Fiber', badgeColor: '#f59e0b', badgeBg: 'rgba(245, 158, 11, 0.15)', needlePct: Math.round(25 + ((speed - 10) / 20) * 25) };
-      if (speed < 100) return { percentile: Math.round(60 + ((speed - 30) / 70) * 25), tier: 'Tier 3 Standard Broadband', badgeColor: 'var(--cyan)', badgeBg: 'rgba(0, 210, 255, 0.15)', needlePct: Math.round(50 + ((speed - 30) / 70) * 25) };
-      if (speed < 300) return { percentile: Math.round(85 + ((speed - 100) / 200) * 11), tier: 'Tier 4 Ultra-Fast Fiber', badgeColor: '#10b981', badgeBg: 'rgba(16, 185, 129, 0.15)', needlePct: Math.round(75 + ((speed - 100) / 200) * 15) };
-      return { percentile: Math.min(99, Math.round(96 + ((speed - 300) / 700) * 3)), tier: 'Tier 5 Gigabit Extreme', badgeColor: '#a855f7', badgeBg: 'rgba(168, 85, 247, 0.18)', needlePct: Math.min(98, Math.round(90 + ((speed - 300) / 700) * 8)) };
+      let res;
+      if (speed < 10) res = { percentile: Math.max(5, Math.round(speed * 2.5)), tier: 'Tier 1 Basic Access', badgeColor: '#ef4444', badgeBg: 'rgba(239, 68, 68, 0.15)', needlePct: Math.max(5, Math.round(speed * 2)) };
+      else if (speed < 30) res = { percentile: Math.round(25 + ((speed - 10) / 20) * 35), tier: 'Tier 2 Basic Fiber', badgeColor: '#f59e0b', badgeBg: 'rgba(245, 158, 11, 0.15)', needlePct: Math.round(25 + ((speed - 10) / 20) * 25) };
+      else if (speed < 100) res = { percentile: Math.round(60 + ((speed - 30) / 70) * 25), tier: 'Tier 3 Standard Broadband', badgeColor: 'var(--cyan)', badgeBg: 'rgba(0, 210, 255, 0.15)', needlePct: Math.round(50 + ((speed - 30) / 70) * 25) };
+      else if (speed < 300) res = { percentile: Math.round(85 + ((speed - 100) / 200) * 11), tier: 'Tier 4 Ultra-Fast Fiber', badgeColor: '#10b981', badgeBg: 'rgba(16, 185, 129, 0.15)', needlePct: Math.round(75 + ((speed - 100) / 200) * 15) };
+      else res = { percentile: Math.min(99, Math.round(96 + ((speed - 300) / 700) * 3)), tier: 'Tier 5 Gigabit Extreme', badgeColor: '#a855f7', badgeBg: 'rgba(168, 85, 247, 0.18)', needlePct: Math.min(98, Math.round(90 + ((speed - 300) / 700) * 8)) };
+      res.rankText = res.percentile >= 50
+        ? ('Top ' + Math.max(1, 100 - res.percentile) + '% Benchmark Tier')
+        : (res.percentile + 'th Percentile · Entry Tier');
+      return res;
     }
 
     function buildLineAssessment(downVal, upVal, jitterStr, lossStr, loadedDownStr, loadedUpStr) {
@@ -4421,7 +4429,6 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const lossNote = lossNum === 0 ? 'zero packet drop' : (lossNum.toFixed(1) + '% packet loss');
       const jitterDesc = jNum <= 5 ? 'low socket jitter variance' : (jNum <= 15 ? 'moderate socket jitter variance' : 'elevated jitter variance');
       const bench = computeRegionalPercentile(d);
-      const topPct = Math.max(1, 100 - bench.percentile);
       return {
         isSymmetrical,
         upSub,
@@ -4429,7 +4436,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         lossNote,
         jitterDesc,
         bench,
-        benchLabel: 'Top ' + topPct + '% Benchmark Tier',
+        benchLabel: bench.rankText,
         latencyDesc: loadedDownStr + ' ms down / ' + loadedUpStr + ' ms up with ' + jitterDesc + ' (' + jitterStr + ').'
       };
     }
@@ -4555,7 +4562,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       setEl('pdf-val-loss-note', assess.lossNote);
       setEl('pdf-val-loaded-desc', snap.loadedDown);
       setEl('pdf-val-loaded-extra', assess.jitterDesc + ' (' + snap.jitter + ')');
-      setEl('pdf-val-hash', 'SHA-256: ' + snap.hash.slice(0, 28) + '...');
+      setEl('pdf-val-hash', 'SHA-256: ' + snap.hash);
 
       updateQoEUI(snap.down, snap.up, snap.ping, snap.loadedDown, snap.loadedUp);
       modal.classList.add('active');
@@ -4881,13 +4888,16 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     .pdf-cert-footer {
       display: flex;
       justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 4px 12px;
       border-top: 1px solid ${isDark ? 'rgba(0, 210, 255, 0.2)' : '#e2e8f0'};
       padding-top: 8px;
       margin-top: 8px;
-      font-size: 7.5px;
+      font-size: 7px;
       color: #64748b;
     }
     .pdf-cert-footer strong { color: ${isDark ? '#94a3b8' : '#0f172a'}; }
+    .pdf-cert-footer .hash { word-break: break-all; font-family: monospace; color: ${isDark ? '#00d2ff' : '#0284c7'}; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -5867,16 +5877,16 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     function promptChangeServer() {
       const localSrv = findNearestEdgeServer(clientNetwork.city, clientNetwork.region, clientNetwork.country, clientNetwork.lat, clientNetwork.lon, clientNetwork.isp);
       const servers = [
-        { name: localSrv.name, city: localSrv.city, ping: '11ms direct local peer', loc: localSrv.node, cx: localSrv.cx, cy: localSrv.cy },
-        { name: 'GTPL KCBPL Broadband Pvt Ltd', city: 'Kolkata', ping: '11ms fiber peer', loc: 'Kolkata (GTPL KCBPL)', cx: 1490.9, cy: 374.6 },
-        { name: 'Bharti Airtel Optical Core', city: 'Kolkata', ping: '12ms optical core', loc: 'Kolkata (Airtel)', cx: 1490.9, cy: 374.6 },
-        { name: 'Tata Communications', city: 'Mumbai', ping: '21ms edge peer', loc: 'Mumbai (Tata Comm)', cx: 1404.9, cy: 394.0 },
-        { name: 'Airtel Digital Optical Core', city: 'New Delhi', ping: '23ms edge peer', loc: 'New Delhi (Airtel)', cx: 1428.9, cy: 341.0 },
-        { name: 'Reliance Jio HyperScale', city: 'Bengaluru', ping: '27ms cloud peer', loc: 'Bengaluru (Jio)', cx: 1431.1, cy: 427.9 },
-        { name: 'Net9 Subsea Gateway', city: 'Chennai', ping: '25ms undersea peer', loc: 'Chennai (Net9)', cx: 1445.9, cy: 427.3 },
-        { name: 'ACT Fibernet', city: 'Hyderabad', ping: '24ms fiber peer', loc: 'Hyderabad (ACT)', cx: 1436.0, cy: 403.4 },
-        { name: 'Siliguri Internet & Cable TV', city: 'Siliguri', ping: '15ms regional peer', loc: 'Siliguri (SICC)', cx: 1491.1, cy: 351.5 },
-        { name: 'Equinix SG1 Asia Pacific Hub', city: 'Singapore', ping: '39ms international', loc: 'Singapore (Equinix)', cx: 1576.8, cy: 492.5 }
+        { name: localSrv.name, city: localSrv.city, ping: 'Auto BGP Anycast', loc: localSrv.node, cx: localSrv.cx, cy: localSrv.cy },
+        { name: 'Cloudflare Anycast Edge (Kolkata CCU)', city: 'Kolkata', ping: 'East India Edge', loc: 'Kolkata Anycast POP (CCU)', cx: 1490.9, cy: 374.6 },
+        { name: 'Cloudflare Anycast Edge (Mumbai BOM)', city: 'Mumbai', ping: 'West India Edge', loc: 'Mumbai Anycast POP (BOM)', cx: 1404.9, cy: 394.0 },
+        { name: 'Cloudflare Anycast Edge (New Delhi DEL)', city: 'New Delhi', ping: 'North India Edge', loc: 'New Delhi Anycast POP (DEL)', cx: 1428.9, cy: 341.0 },
+        { name: 'Cloudflare Anycast Edge (Bengaluru BLR)', city: 'Bengaluru', ping: 'South India Edge', loc: 'Bengaluru Anycast POP (BLR)', cx: 1431.1, cy: 427.9 },
+        { name: 'Cloudflare Anycast Edge (Singapore SIN)', city: 'Singapore', ping: 'SE Asia Hub', loc: 'Singapore Anycast POP (SIN)', cx: 1576.8, cy: 492.5 },
+        { name: 'Cloudflare Anycast Edge (Dubai DXB)', city: 'Dubai', ping: 'Middle East Hub', loc: 'Dubai Anycast POP (DXB)', cx: 1307.1, cy: 360.0 },
+        { name: 'Cloudflare Anycast Edge (Frankfurt FRA)', city: 'Frankfurt', ping: 'Central Europe', loc: 'Frankfurt Anycast POP (FRA)', cx: 1048.2, cy: 221.6 },
+        { name: 'Cloudflare Anycast Edge (London LHR)', city: 'London', ping: 'UK Edge', loc: 'London Anycast POP (LHR)', cx: 999.3, cy: 213.8 },
+        { name: 'Cloudflare Anycast Edge (New York JFK)', city: 'New York', ping: 'US East', loc: 'New York Anycast POP (JFK)', cx: 588.9, cy: 273.8 }
       ];
 
       const uniqueServers = [];
@@ -5888,7 +5898,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         }
       }
 
-      const promptText = 'Select Sovereign Edge Peering Server:\n\n' + uniqueServers.map((s, i) => (i + 1) + '. ' + s.name + ' [' + s.ping + ']').join('\n');
+      const promptText = 'Select Display / Audit Reference Anycast POP\n(Traffic automatically routes via Cloudflare BGP Anycast):\n\n' + uniqueServers.map((s, i) => (i + 1) + '. ' + s.name + ' [' + s.ping + ']').join('\n');
       const choice = prompt(promptText, '1');
       const selIdx = parseInt(choice, 10) - 1;
       if (selIdx >= 0 && selIdx < uniqueServers.length) {
@@ -5904,7 +5914,6 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         if (pingElem) pingElem.textContent = sel.ping;
         const nodeElem = document.getElementById('settings-routing-node');
         if (nodeElem) nodeElem.textContent = sel.loc;
-        alert('Active Server updated to: ' + sel.name + ' (' + sel.city + ')');
       }
     }
 
@@ -6091,7 +6100,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
       // 1. Competitive Gaming (Target: low ping & minimal bufferbloat delay)
       let gScore = 10.0 - (ping / 15) * 0.9 - (bufferbloatDiff / 50) * 0.4;
-      gScore = Math.max(2.0, Math.min(10.0, Number(gScore.toFixed(1))));
+      gScore = Math.max(0.5, Math.min(10.0, Number(gScore.toFixed(1))));
       let gSub = Math.round(ping) + 'ms Ping';
       if (ping <= 20) gSub += ' · eSports Grade';
       else if (ping <= 50) gSub += ' · Smooth Multiplayer';
@@ -6105,23 +6114,25 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       else if (down >= 25) sScore = 9.2 + ((down - 25) / 25) * 0.5;
       else if (down >= 15) sScore = 8.0 + ((down - 15) / 10) * 1.1;
       else if (down >= 5) sScore = 6.0 + ((down - 5) / 10) * 1.9;
-      else sScore = Math.max(2.0, (down / 5) * 5.5);
-      sScore = Math.max(2.0, Math.min(10.0, Number(sScore.toFixed(1))));
+      else sScore = Math.max(0.5, (down / 5) * 5.5);
+      sScore = Math.max(0.5, Math.min(10.0, Number(sScore.toFixed(1))));
       let sSub = down.toFixed(2) + ' Mbps';
       if (down >= 50) sSub += ' · Multi-Screen 4K/8K';
       else if (down >= 25) sSub += ' · Smooth 4K UHD';
       else if (down >= 15) sSub += ' · Full HD 1080p';
-      else sSub += ' · Standard Definition';
+      else if (down >= 3) sSub += ' · Standard Definition';
+      else sSub += ' · Basic / Low Bandwidth';
 
       // 3. Video Meetings & Calls (Target: upstream bandwidth & low ping)
       let cScore = 9.9;
       if (ping > 30) cScore -= ((ping - 30) / 30) * 0.8;
       if (up < 10) cScore -= ((10 - up) / 10) * 1.5;
-      cScore = Math.max(2.0, Math.min(10.0, Number(cScore.toFixed(1))));
+      cScore = Math.max(0.5, Math.min(10.0, Number(cScore.toFixed(1))));
       let cSub = up.toFixed(1) + ' Mbps Up · ' + Math.round(ping) + 'ms Ping';
       if (cScore >= 9.5) cSub += ' · Crystal Clear HD';
       else if (cScore >= 8.5) cSub += ' · Smooth Video Call';
-      else cSub += ' · Occasional Glitch';
+      else if (cScore >= 5.0) cSub += ' · Occasional Glitch';
+      else cSub += ' · High Call Delay';
 
       // 4. Cloud Sync & Large Uploads (Target: upstream throughput)
       let uScore = 5.0;
@@ -6130,24 +6141,26 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       else if (up >= 25) uScore = 9.0 + ((up - 25) / 25) * 0.7;
       else if (up >= 10) uScore = 7.8 + ((up - 10) / 15) * 1.1;
       else if (up >= 3) uScore = 6.0 + ((up - 3) / 7) * 1.7;
-      else uScore = Math.max(2.0, (up / 3) * 5.5);
-      uScore = Math.max(2.0, Math.min(10.0, Number(uScore.toFixed(1))));
+      else uScore = Math.max(0.5, (up / 3) * 5.5);
+      uScore = Math.max(0.5, Math.min(10.0, Number(uScore.toFixed(1))));
       let uSub = up.toFixed(2) + ' Mbps Upstream';
 
       // 5. Instant Web Browsing (Target: fast TTFB, low ping & fast down)
       let bScore = 10.0 - (ping / 25) * 0.7;
       if (down < 15) bScore -= ((15 - down) / 15) * 1.0;
-      bScore = Math.max(2.0, Math.min(10.0, Number(bScore.toFixed(1))));
+      bScore = Math.max(0.5, Math.min(10.0, Number(bScore.toFixed(1))));
       let bSub = '<' + Math.max(10, Math.round(ping * 0.8)) + 'ms TTFB';
       if (bScore >= 9.5) bSub += ' · Instant Load';
       else if (bScore >= 8.5) bSub += ' · Very Snappy';
       else bSub += ' · Standard Page Render';
 
-      // 6. Line Stability & Bufferbloat (Target: loaded variance vs idle ping)
-      let stScore = 99.8 - (bufferbloatDiff / 10) * 0.8 - (ping / 40) * 0.4;
-      stScore = Math.max(70.0, Math.min(99.8, Number(stScore.toFixed(1))));
+      // 6. Line Stability & Bufferbloat (RFC 8290 full A+..F scale)
+      let stScore = 99.8 - (bufferbloatDiff / 12) * 0.8 - (ping / 40) * 0.4;
+      stScore = Math.max(20.0, Math.min(99.8, Number(stScore.toFixed(1))));
       let grade = 'Grade A+ · Zero Bufferbloat';
-      if (bufferbloatDiff > 80) grade = 'Grade C · Bufferbloat Lag';
+      if (bufferbloatDiff > 500) grade = 'Grade F · Severe Bufferbloat';
+      else if (bufferbloatDiff > 200) grade = 'Grade D · High Bufferbloat';
+      else if (bufferbloatDiff > 80) grade = 'Grade C · Bufferbloat Lag';
       else if (bufferbloatDiff > 35) grade = 'Grade B · Minor Bufferbloat';
       else if (bufferbloatDiff > 15) grade = 'Grade A · Minimal Variance';
       let stSub = grade;
@@ -6163,7 +6176,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       );
 
       let overallTier = 'Tier 1 Ultra-Fiber · Flawless';
-      if (overallScore < 70) overallTier = 'Tier 4 Basic Line · High Latency';
+      if (overallScore < 50) overallTier = 'Tier 5 Congested · High Latency';
+      else if (overallScore < 70) overallTier = 'Tier 4 Basic Line · High Latency';
       else if (overallScore < 85) overallTier = 'Tier 3 Standard Broadband';
       else if (overallScore < 95) overallTier = 'Tier 2 High-Speed Broadband';
 
@@ -6174,7 +6188,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         uploads: { score: uScore.toFixed(1), ratio: uScore / 10, sub: uSub },
         browsing: { score: bScore.toFixed(1), ratio: bScore / 10, sub: bSub },
         stability: { score: stScore.toFixed(1) + '%', ratio: stScore / 100, sub: stSub },
-        overallScore: Math.min(100, Math.max(30, overallScore)),
+        overallScore: Math.min(100, Math.max(5, overallScore)),
         overallTier: overallTier,
         radarRatios: [
           gScore / 10,
@@ -6690,7 +6704,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       if (benchBadge) {
         const downCur = document.getElementById('disp-download')?.textContent || '0';
         const bench = computeRegionalPercentile(downCur);
-        benchBadge.textContent = '⭐ Top ' + Math.max(1, 100 - bench.percentile) + '% Benchmark Tier (' + (clientNetwork.serverCity || 'Global Edge') + ')';
+        benchBadge.textContent = '⭐ ' + bench.rankText + ' (' + (clientNetwork.serverCity || 'Global Edge') + ')';
       }
 
       // Update "Understand My Result" benchmark badge dynamically
@@ -7203,15 +7217,17 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       canvas.height = 630;
       const ctx = canvas.getContext('2d');
 
-      const downVal = document.getElementById('disp-download')?.textContent || '23.16';
-      const upVal = document.getElementById('disp-upload')?.textContent || '22.71';
-      const pingVal = document.getElementById('disp-ping')?.textContent || '24';
-      const jitterVal = document.getElementById('disp-jitter')?.textContent || '2.10ms';
-      const lossVal = document.getElementById('disp-loss')?.textContent || '0.0%';
-      const loadedVal = document.getElementById('disp-loaded')?.textContent || '---';
-      const ispVal = clientNetwork.isp || 'Broadband Network';
-      const locVal = [clientNetwork.city, clientNetwork.region, clientNetwork.country].filter(Boolean).join(', ') || 'Global Peering Node';
-      const resultIdText = document.getElementById('disp-result-id')?.textContent || `Result ID: BM97-#${currentTestNum}`;
+      const snap = getOrCreateTelemetrySnapshot();
+      const assess = buildLineAssessment(snap.down, snap.up, snap.jitter, snap.loss, snap.loadedDown, snap.loadedUp);
+      const downVal = snap.down;
+      const upVal = snap.up;
+      const pingVal = snap.ping;
+      const jitterVal = snap.jitter;
+      const lossVal = snap.loss;
+      const loadedVal = snap.loadedDown;
+      const ispVal = snap.isp;
+      const locVal = snap.node;
+      const resultIdText = 'Result ID: ' + snap.id;
 
       // 1. Sleek Midnight Gradient Background
       const bgGrad = ctx.createLinearGradient(0, 0, 1200, 630);
@@ -7288,7 +7304,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.font = '500 15px "Segoe UI", Inter, sans-serif';
-      ctx.fillText('90th Percentile Sustained Multi-Socket Stream', 90, 345);
+      ctx.fillText((typeof isMulti !== 'undefined' && !isMulti) ? 'RFC 6349 Sustained Single-Socket Window' : 'RFC 6349 Sustained Multi-Socket Window', 90, 345);
 
       // Card 2: UPLOAD SPEED
       const upCardGrad = ctx.createLinearGradient(630, 150, 1140, 390);
@@ -7314,7 +7330,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.font = '500 15px "Segoe UI", Inter, sans-serif';
-      ctx.fillText('Direct Upstream Saturation & Verification', 660, 345);
+      ctx.fillText('Direct Upstream Saturation · ' + assess.upSub, 660, 345);
 
       // Bottom Row Metrics: Ping, Loaded, Jitter, Packet Loss
       const metrics = [
@@ -7343,20 +7359,19 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       // Footer: ISP / Network Metadata & Timestamp
       ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.font = 'bold 15px "Segoe UI", Inter, sans-serif';
-      ctx.fillText('📡 ISP: ' + ispVal, 60, 545);
+      ctx.fillText('📡 ISP: ' + ispVal, 60, 545, 580);
 
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.font = '500 14px "Segoe UI", Inter, sans-serif';
-      ctx.fillText('📍 Location: ' + locVal + ' • Verified via Direct Edge', 60, 575);
+      ctx.fillText('📍 ' + locVal + ' • ' + snap.server, 60, 575, 580);
 
-      const testTime = new Date().toLocaleString();
       ctx.textAlign = 'right';
       ctx.fillStyle = '#00d2ff';
       ctx.font = 'bold 15px "Segoe UI", Inter, sans-serif';
       ctx.fillText('billmaster97.com/internet-speed-test/', 1140, 545);
       ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
       ctx.font = '500 13px "Segoe UI", Inter, sans-serif';
-      ctx.fillText('Tested: ' + testTime, 1140, 575);
+      ctx.fillText('UTC: ' + snap.utc + ' • SHA-256: ' + snap.hash.slice(0, 16) + '...', 1140, 575);
       ctx.textAlign = 'left';
 
       // Export & trigger download
@@ -7780,11 +7795,16 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       clearInterval(downSampler);
       pingDownRunning = false;
 
-      // RFC 6349 final sustained throughput (integrates over sustained window)
+      // RFC 6349 final sustained throughput (integrates over sustained window, falls back cleanly on ultra-slow cellular links)
+      const totalDownSec = (performance.now() - downStartTime) / 1000;
       const finalDownSec = (performance.now() - (downWarmupPassed ? downWarmupTime : downStartTime)) / 1000;
       const finalDownBytes = totalDownloadedBytes - (downWarmupPassed ? downWarmupBytes : 0);
-      finalDown = finalDownSec > 0.2 ? (finalDownBytes * 8) / (finalDownSec * 1000000) : 48.0;
-      if (finalDown < 1.0) finalDown = 1.0;
+      if (downWarmupPassed && finalDownSec > 0.2 && finalDownBytes > 0) {
+        finalDown = (finalDownBytes * 8) / (finalDownSec * 1000000);
+      } else {
+        finalDown = totalDownSec > 0.2 ? (totalDownloadedBytes * 8) / (totalDownSec * 1000000) : 0.05;
+      }
+      if (finalDown < 0.05) finalDown = 0.05;
       if (dispDown) dispDown.textContent = finalDown.toFixed(2);
       downloadSamples.push({ t: Number(((performance.now() - downStartTime) / 1000).toFixed(1)), v: Number(finalDown.toFixed(2)) });
       drawThroughputCurves();
@@ -7855,25 +7875,50 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         }
       }, 100);
 
-      const upChunkSize = 500000; // 500KB chunk
+      // Adaptive XHR real-time progress upload chunks (accurate down to <0.1 Mbps cellular as well as Gigabit)
+      const upChunkSize = 262144; // 256KB payload chunk streamed via xhr.upload.onprogress
       const upBlob = new Blob([new Uint8Array(upChunkSize)]);
 
-      async function runUploadStream(streamId) {
-        while (performance.now() - upStartTime < upDurationMs) {
-          try {
-            await fetch('https://speed.cloudflare.com/__up', {
-              method: 'POST',
-              body: upBlob,
-              cache: 'no-store',
-              signal: upAbort.signal
-            });
-            totalUploadedBytes += upChunkSize;
+      function runUploadChunkXhr() {
+        return new Promise((resolve) => {
+          if (performance.now() - upStartTime >= upDurationMs || upAbort.signal.aborted) {
+            resolve(false);
+            return;
+          }
+          const xhr = new XMLHttpRequest();
+          let lastLoaded = 0;
+          const onAbort = () => { try { xhr.abort(); } catch(e) {} };
+          upAbort.signal.addEventListener('abort', onAbort, { once: true });
 
+          xhr.upload.onprogress = (ev) => {
+            const delta = Math.max(0, ev.loaded - lastLoaded);
+            lastLoaded = ev.loaded;
+            totalUploadedBytes += delta;
             if (performance.now() - upStartTime >= upDurationMs) {
               upAbort.abort();
-              break;
             }
-          } catch(e) {
+          };
+          xhr.onload = () => {
+            if (lastLoaded < upChunkSize) {
+              totalUploadedBytes += (upChunkSize - lastLoaded);
+            }
+            upAbort.signal.removeEventListener('abort', onAbort);
+            resolve(true);
+          };
+          xhr.onerror = xhr.onabort = () => {
+            upAbort.signal.removeEventListener('abort', onAbort);
+            resolve(false);
+          };
+          xhr.open('POST', 'https://speed.cloudflare.com/__up?t=' + Date.now() + '_' + Math.random(), true);
+          xhr.send(upBlob);
+        });
+      }
+
+      async function runUploadStream(streamId) {
+        while (performance.now() - upStartTime < upDurationMs && !upAbort.signal.aborted) {
+          const ok = await runUploadChunkXhr();
+          if (!ok || performance.now() - upStartTime >= upDurationMs) {
+            upAbort.abort();
             break;
           }
         }
@@ -7885,11 +7930,16 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       clearInterval(upSampler);
       pingUpRunning = false;
 
-      // RFC 6349 final sustained upload throughput
+      // RFC 6349 final sustained upload throughput (accurate without artificial 0.5 Mbps clamp)
+      const totalUpSec = (performance.now() - upStartTime) / 1000;
       const finalUpSec = (performance.now() - (upWarmupPassed ? upWarmupTime : upStartTime)) / 1000;
       const finalUpBytes = totalUploadedBytes - (upWarmupPassed ? upWarmupBytes : 0);
-      finalUp = finalUpSec > 0.2 ? (finalUpBytes * 8) / (finalUpSec * 1000000) : 48.0;
-      if (finalUp < 0.5) finalUp = 0.5;
+      if (upWarmupPassed && finalUpSec > 0.2 && finalUpBytes > 0) {
+        finalUp = (finalUpBytes * 8) / (finalUpSec * 1000000);
+      } else {
+        finalUp = totalUpSec > 0.2 ? (totalUploadedBytes * 8) / (totalUpSec * 1000000) : 0.05;
+      }
+      if (finalUp < 0.05) finalUp = 0.05;
       if (dispUp) dispUp.textContent = finalUp.toFixed(2);
       uploadSamples.push({ t: Number(((performance.now() - upStartTime) / 1000).toFixed(1)), v: Number(finalUp.toFixed(2)) });
       drawThroughputCurves();
@@ -7934,7 +7984,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const pdfIp = document.getElementById('pdf-val-ip'); if (pdfIp) pdfIp.textContent = clientNetwork.ip;
       const pdfServer = document.getElementById('pdf-val-server'); if (pdfServer) pdfServer.textContent = clientNetwork.server;
       const pdfTime = document.getElementById('pdf-val-time'); if (pdfTime) pdfTime.textContent = tsFmt.auditStr;
-      const pdfHash = document.getElementById('pdf-val-hash'); if (pdfHash) pdfHash.textContent = 'SHA-256: ' + snap.hash.slice(0, 28) + '...';
+      const pdfHash = document.getElementById('pdf-val-hash'); if (pdfHash) pdfHash.textContent = 'SHA-256: ' + snap.hash;
 
       // GA4 Speed Test Completed Event (Official Test Counter)
       try {
