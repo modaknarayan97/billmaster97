@@ -4313,6 +4313,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     
     // MODAL DIALOG ENGINE (RESULTS HISTORY & GLOBAL SETTINGS)
     let activeHistoryFilter = 'all'; // 'all', 'web', 'speed'
+    var currentTestNum = parseInt(localStorage.getItem('bm97_telecom_runs') || '1', 10) || 1;
 
     
     // PDF SPEED REPORT & TELEMETRY CERTIFICATE CONTROLLER
@@ -4320,9 +4321,10 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const modal = document.getElementById('modal-pdf-report');
       if (!modal) return;
 
-      const num = testNum || currentTestNum || 1;
+      const telecomSuffix = (typeof currentTelecomId !== 'undefined' && currentTelecomId) ? currentTelecomId.replace('BM97-', '') : null;
+      const num = testNum || telecomSuffix || currentTestNum || 1;
       const certIdElem = document.getElementById('pdf-cert-id');
-      if (certIdElem) certIdElem.textContent = 'BM97-CERT-#' + num;
+      if (certIdElem) certIdElem.textContent = 'BM97-CERT-' + String(num).replace(/^#/, '');
 
       // Update current values from cockpit
       const dispDown = document.getElementById('disp-download')?.textContent || '0.00';
@@ -4694,7 +4696,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
           const W = width;
           const H = height;
-          const num = currentTestNum || 15;
+          const num = (typeof currentTestNum !== 'undefined' && currentTestNum) ? currentTestNum : 15;
+          const safeTelecomId = (typeof currentTelecomId !== 'undefined' && currentTelecomId) ? currentTelecomId : ('BM97-' + num);
 
           // ==============================================================
           // UNIVERSAL MULTI-LANGUAGE & INTERNATIONAL RESILIENCE UTILITIES
@@ -4795,7 +4798,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             color: cBadgeBg
           });
 
-          page.drawText('CERTIFICATE: ' + (currentTelecomId ? currentTelecomId.replace('BM97-', 'BM97-CERT-') : ('BM97-CERT-' + num)), {
+          page.drawText('CERTIFICATE: ' + safeTelecomId.replace('BM97-', 'BM97-CERT-'), {
             x: W - 233, y: 786, size: 9.5, font: fontBold,
             color: cGreen
           });
@@ -4840,6 +4843,12 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           drawLeftBounded('Symmetrical High-Speed Line', 226, 665, 370, fontRegular, 7.5, cTextMuted);
 
           // Card 3: Idle Latency
+          const jitterRaw = document.getElementById('disp-jitter')?.textContent || '2.03 ms';
+          const lossRaw = document.getElementById('disp-loss')?.textContent || '0.0%';
+          const loadedDownRaw = document.getElementById('disp-loaded')?.textContent || '---';
+          const loadedUpRaw = document.getElementById('disp-up-ping')?.textContent || '---';
+          const genuineQoE = computeGenuineQoE(downVal, upVal, pingVal, loadedDownRaw, loadedUpRaw);
+
           page.drawRectangle({
             x: 388, y: 652, width: 163, height: 88,
             borderColor: cAmber, borderWidth: 1.2,
@@ -4848,7 +4857,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           page.drawRectangle({ x: 388, y: 737, width: 163, height: 3, color: cAmber });
           page.drawText('IDLE LATENCY & JITTER', { x: 398, y: 720, size: 8, font: fontBold, color: cTextMuted });
           page.drawText(pingVal + ' ms', { x: 398, y: 686, size: 21, font: fontBold, color: cAmber });
-          drawLeftBounded('Jitter: 2.03 ms | Zero Loss', 398, 665, 540, fontRegular, 7.5, cTextMuted);
+          drawLeftBounded('Jitter: ' + jitterRaw + ' | Loss: ' + lossRaw, 398, 665, 540, fontRegular, 7.5, cTextMuted);
 
           // 4. NETWORK AUDIT & TELEMETRY VERIFICATION BOX (y: 508 to 640, height: 132)
           page.drawRectangle({
@@ -4883,7 +4892,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
           const lblPingW = fontBold.widthOfTextAtSize('Loaded Ping (Down/Up): ', 8.5);
           page.drawText('Loaded Ping (Down/Up):', { x: 320, y: 574, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded('33 ms  /  93 ms', 320 + lblPingW, 574, 540, fontBold, 8.5, cAmber);
+          drawLeftBounded(loadedDownRaw + ' ms  /  ' + loadedUpRaw + ' ms', 320 + lblPingW, 574, 540, fontBold, 8.5, cAmber);
 
           // Line 3 (y: 554)
           const lblAsnW = fontBold.widthOfTextAtSize('Autonomous System: ', 8.5);
@@ -4892,7 +4901,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
           const lblBufW = fontBold.widthOfTextAtSize('Bufferbloat Grade: ', 8.5);
           page.drawText('Bufferbloat Grade:', { x: 320, y: 554, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded('Grade A (eSports Verified)', 320 + lblBufW, 554, 540, fontBold, 8.5, cGreen);
+          drawLeftBounded(genuineQoE.stability.sub || 'Grade A (Verified)', 320 + lblBufW, 554, 540, fontBold, 8.5, cGreen);
 
           // Line 4 (y: 534)
           const lblNodeW = fontBold.widthOfTextAtSize('Physical Node: ', 8.5);
@@ -4913,7 +4922,6 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           drawLeftBounded('TLS 1.3 / HTTP-3 Direct', 320 + lblProtW, 516, 540, fontRegular, 8, cTextBody);
 
           // 5. QUALITY OF EXPERIENCE (QoE) 6-PILLAR ASSESSMENT (100% Genuine Metrics)
-          const genuineQoE = computeGenuineQoE(downVal, upVal, pingVal, document.getElementById('disp-loaded')?.textContent, document.getElementById('disp-up-ping')?.textContent);
 
           page.drawRectangle({
             x: 44, y: 318, width: 507, height: 178,
@@ -5020,7 +5028,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           drawLeftBounded(new Date().toLocaleDateString() + ' • ' + time + ' IST', 110, 118, 290, fontBold, 8, cTextHead);
 
           page.drawText('Session Nonce:', { x: 300, y: 118, size: 8, font: fontRegular, color: cTextMuted });
-          drawLeftBounded(currentTelecomId || ('BM97-' + num + '-19879845066'), 375, 118, 540, fontBold, 8, cTextHead);
+          drawLeftBounded(safeTelecomId, 375, 118, 540, fontBold, 8, cTextHead);
 
           drawLeftBounded('Integrity Hash: SHA-256: 7f83b1657ff1fc53b92dc1810f5439a8e2cb927361957de0b07ac02194bb8b97', 56, 100, 540, fontBold, 7.5, cCyan);
 
@@ -5041,7 +5049,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
           const link = document.createElement('a');
           link.href = fileUrl;
-          link.download = 'BillMaster97_SpeedReport_' + (currentTelecomId || ('BM97-' + num)) + '_' + Date.now() + '.pdf';
+          link.download = 'BillMaster97_SpeedReport_' + safeTelecomId + '_' + Date.now() + '.pdf';
           document.body.appendChild(link);
           link.click();
 
@@ -5341,7 +5349,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
       // 4. Update Server Name Display
       const serverElem = document.getElementById('settings-active-server');
-      if (serverElem) serverElem.textContent = clientNetwork.server || bmSettings.server || 'Direct Peering Center';
+      if (serverElem) serverElem.textContent = (typeof clientNetwork !== 'undefined' && clientNetwork.server) || bmSettings.server || 'Direct Peering Center';
     }
 
     function updateSettingsUI() {
@@ -6290,6 +6298,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const coordsStr = (clientNetwork.lat && clientNetwork.lon) ? (Number(clientNetwork.lat).toFixed(4) + ' N / ' + Number(clientNetwork.lon).toFixed(4) + ' E') : '---';
       const serverName = clientNetwork.server || 'Cloudflare Ultra-Edge';
 
+      const qoeData = activeQoE || computeGenuineQoE(down, up, ping, loaded, upPing);
       const headers = ['Metric', 'Value', 'Unit'];
       const rows = [
         ['Telemetry Engine', 'BillMaster97 Sovereign Speedtest Pro v2.3.3', ''],
@@ -6307,14 +6316,14 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         ['Loaded Download Ping', loaded, 'ms'],
         ['Loaded Upload Ping', upPing, 'ms'],
         ['Packet Jitter', jitter, 'ms'],
-        ['Bufferbloat Rating', 'Grade A (eSports Verified)', ''],
-        ['Overall QoE Score', activeQoE.overallScore + ' / 100', activeQoE.overallTier],
-        ['Competitive Gaming QoE', activeQoE.gaming.score + ' / 10', activeQoE.gaming.sub],
-        ['4K UHD Video Streaming QoE', activeQoE.streaming.score + ' / 10', activeQoE.streaming.sub],
-        ['Video Meetings & Calls QoE', activeQoE.calls.score + ' / 10', activeQoE.calls.sub],
-        ['Cloud Sync & Uploads QoE', activeQoE.uploads.score + ' / 10', activeQoE.uploads.sub],
-        ['Instant Web Browsing QoE', activeQoE.browsing.score + ' / 10', activeQoE.browsing.sub],
-        ['Line Stability & Consistency', activeQoE.stability.score, activeQoE.stability.sub],
+        ['Bufferbloat Rating', qoeData.stability.sub || 'Grade A (Verified)', ''],
+        ['Overall QoE Score', qoeData.overallScore + ' / 100', qoeData.overallTier],
+        ['Competitive Gaming QoE', qoeData.gaming.score + ' / 10', qoeData.gaming.sub],
+        ['4K UHD Video Streaming QoE', qoeData.streaming.score + ' / 10', qoeData.streaming.sub],
+        ['Video Meetings & Calls QoE', qoeData.calls.score + ' / 10', qoeData.calls.sub],
+        ['Cloud Sync & Uploads QoE', qoeData.uploads.score + ' / 10', qoeData.uploads.sub],
+        ['Instant Web Browsing QoE', qoeData.browsing.score + ' / 10', qoeData.browsing.sub],
+        ['Line Stability & Consistency', qoeData.stability.score, qoeData.stability.sub],
         ['Connection Architecture', 'Multi-Socket Parallel TCP Streams', ''],
         ['Connection Protocol', 'HTTP/3 Direct Multi-Stream', ''],
         ['Integrity Hash (SHA-256)', '7f83b1657ff1fc53b92dc1810f5439a8e2cb927361957de0b07ac02194bb8b97', ''],
