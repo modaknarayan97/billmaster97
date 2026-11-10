@@ -1345,6 +1345,166 @@
     }
 
     /* ========================================================
+       PRO LAB, UDP/QUIC DIAGNOSTICS & UNICAST SERVER PICKER
+       ======================================================== */
+    .pro-diag-strip {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px 16px;
+      padding: 8px 12px;
+      background: rgba(0, 210, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 11.5px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+    .pro-diag-strip strong {
+      color: var(--text-main);
+    }
+    .pro-lab-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .pro-lab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .pro-lab-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pro-lab-tab {
+      background: var(--bg-card);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pro-lab-tab:hover {
+      border-color: var(--cyan);
+      color: var(--text-main);
+    }
+    .pro-lab-tab.active {
+      background: linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(168, 85, 247, 0.16));
+      color: var(--cyan);
+      border-color: var(--cyan);
+    }
+    .pro-lab-pane {
+      display: none;
+    }
+    .pro-lab-pane.active {
+      display: block;
+    }
+    .pro-lab-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .pro-lab-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pro-btn-primary {
+      background: linear-gradient(135deg, var(--cyan), #2563eb);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .pro-btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .pro-btn-secondary:hover {
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+    .pro-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 8px;
+    }
+    .pro-kpi-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .pro-kpi-lbl {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .pro-kpi-val {
+      font-size: 15px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: var(--cyan);
+      margin-top: 2px;
+    }
+    .region-bar-track {
+      height: 8px;
+      background: rgba(148, 163, 184, 0.16);
+      border-radius: 4px;
+      overflow: hidden;
+      min-width: 90px;
+    }
+    .region-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.35s ease;
+    }
+    .server-picker-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      width: 100%;
+      color: var(--text-main);
+    }
+    .server-picker-option:hover, .server-picker-option.active {
+      border-color: var(--cyan);
+      background: rgba(0, 210, 255, 0.1);
+    }
+
+    /* ========================================================
        PREMIUM ELECTRIC BLUE VECTOR MAP (BEATING SPEEDTEST.NET)
        ======================================================== */
     .server-location-section {
@@ -3405,6 +3565,12 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             </div>
           </div>
 
+          <div class="pro-diag-strip" id="pro-diag-strip">
+            <span>🛰️ UDP/STUN: <strong id="disp-udp-stun">Pending Test</strong></span>
+            <span>📈 p95 Tail Ping: <strong id="disp-p95-ping">--</strong></span>
+            <span>🔀 Mode/Route: <strong id="disp-route-engine">Cloudflare Anycast · Multi</strong></span>
+          </div>
+
           <!-- NPS Survey Rating Bar -->
           <div class="nps-box-compact">
             <div class="nps-question" id="nps-question-text">HOW LIKELY IS IT THAT YOU WOULD RECOMMEND <span id="nps-isp-name">YOUR ISP</span> TO A FRIEND OR COLLEAGUE?</div>
@@ -3908,6 +4074,13 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           </div>
         </div>
         <div id="inline-history-container" style="display: none; margin-top: 14px; overflow-x: auto;">
+          <div id="history-trend-wrap" style="display: none; margin-bottom: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11.5px; color: var(--text-muted);">
+              <span><strong style="color: var(--cyan);">📈 Saved Session Trend</strong> (Download / Upload / Ping)</span>
+              <span id="history-trend-summary">--</span>
+            </div>
+            <canvas id="history-trend-canvas" style="width: 100%; height: 110px; display: block;"></canvas>
+          </div>
           <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
             <thead>
               <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted);">
@@ -3928,6 +4101,148 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
               </tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- PRO DIAGNOSTICS LAB: BEATING NPERF, CLOUDFLARE, OOKLA & DOWNDETECTOR -->
+      <section class="pro-lab-section" id="section-pro-lab">
+        <div class="pro-lab-header">
+          <div>
+            <strong style="font-size: 15px; color: var(--text-main);">⚡ Pro Network Diagnostics Lab</strong>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Real adaptive video buffering, global unicast ping radar, 24h ISP SLA monitor &amp; 10G+ native CLI</div>
+          </div>
+          <div class="pro-lab-tabs">
+            <button type="button" class="pro-lab-tab active" data-protab="video" onclick="switchProLabTab('video')">🎬 Video &amp; Web Stress</button>
+            <button type="button" class="pro-lab-tab" data-protab="radar" onclick="switchProLabTab('radar')">🌍 Global Ping Radar</button>
+            <button type="button" class="pro-lab-tab" data-protab="soak" onclick="switchProLabTab('soak')">⏱️ 24h Soak Monitor</button>
+            <button type="button" class="pro-lab-tab" data-protab="cli" onclick="switchProLabTab('cli')">⚡ 10G+ CLI Tool</button>
+          </div>
+        </div>
+
+        <!-- TAB 1: REAL ADAPTIVE VIDEO & COLD WEB PLAYBACK STRESS -->
+        <div class="pro-lab-pane active" id="pro-pane-video">
+          <div class="pro-lab-grid">
+            <div class="pro-lab-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <strong style="font-size: 13.5px; color: var(--cyan);">🎬 Live Adaptive Video Buffer Test</strong>
+                <span id="video-tier-badge" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border); color: var(--text-muted);">Ready</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted);">Streams real timed 1s adaptive HTTPS media segments (360p → 720p → 1080p → 4K) to measure true TTFF &amp; stalling.</div>
+              <div class="pro-kpi-row">
+                <div class="pro-kpi-box"><div class="pro-kpi-lbl">Verified Res</div><div class="pro-kpi-val" id="vid-res-val">--</div></div>
+                <div class="pro-kpi-box"><div class="pro-kpi-lbl">TTFF (Delay)</div><div class="pro-kpi-val" id="vid-ttff-val">--</div></div>
+                <div class="pro-kpi-box"><div class="pro-kpi-lbl">Rebuffers</div><div class="pro-kpi-val" id="vid-stall-val">--</div></div>
+                <div class="pro-kpi-box"><div class="pro-kpi-lbl">Avg Bitrate</div><div class="pro-kpi-val" id="vid-kbps-val">--</div></div>
+              </div>
+              <canvas id="video-buffer-canvas" style="width: 100%; height: 96px; display: block; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border);"></canvas>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="pro-btn-primary" id="btn-run-video-test" onclick="runAdaptiveVideoStressTest()">▶ Run Video Buffer Test</button>
+                <button type="button" class="pro-btn-secondary" id="btn-stop-video-test" onclick="stopVideoStressTest()" style="display: none;">⏹ Stop</button>
+              </div>
+            </div>
+
+            <div class="pro-lab-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <strong style="font-size: 13.5px; color: var(--emerald);">🌐 Real Multi-Asset Web Load Test</strong>
+                <span id="web-grade-badge" style="font-size: 11px; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border); color: var(--text-muted);">Ready</span>
+              </div>
+              <div style="font-size: 12px; color: var(--text-muted);">Fetches sequential HTML + CSS + JS + Hero Image assets and reads browser PerformanceResourceTiming waterfall.</div>
+              <div class="pro-kpi-row">
+                <div class="pro-kpi-box"><div class="pro-kpi-lbl">Page Load</div><div class="pro-kpi-val" id="web-total-val">--</div></div>
+                <div class="pro-kpi-box"><div class="pro-kpi-lbl">Cold TTFB</div><div class="pro-kpi-val" id="web-ttfb-val">--</div></div>
+                <div class="pro-kpi-box"><div class="pro-kpi-lbl">Payload</div><div class="pro-kpi-val" id="web-bytes-val">543 KB</div></div>
+              </div>
+              <div id="web-waterfall-log" style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; min-height: 92px; line-height: 1.55;">
+                Click "Run Web Load Test" to benchmark real HTTPS resource waterfall timings.
+              </div>
+              <div>
+                <button type="button" class="pro-btn-primary" id="btn-run-web-test" onclick="runColdWebLoadTest()">🌐 Run Cold Web Page Load</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: GLOBAL UNICAST PING RADAR -->
+        <div class="pro-lab-pane" id="pro-pane-radar">
+          <div class="pro-lab-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <strong style="font-size: 13.5px; color: var(--cyan);">🌍 6-Region Live Global Route Latency Radar</strong>
+                <div style="font-size: 12px; color: var(--text-muted);">Measures real HTTPS RTT directly from your browser to regional backbone endpoints worldwide, with 1-click Unicast speed testing.</div>
+              </div>
+              <button type="button" class="pro-btn-primary" id="btn-run-radar" onclick="runGlobalRegionPingRadar()">🌍 Ping 6 Global Regions Live</button>
+            </div>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border); color: var(--text-muted);">
+                    <th style="padding: 8px 6px;">Region Hub</th>
+                    <th style="padding: 8px 6px;">Median RTT</th>
+                    <th style="padding: 8px 6px;">Jitter</th>
+                    <th style="padding: 8px 6px;">Route Bar</th>
+                    <th style="padding: 8px 6px;">App / Gaming Verdict</th>
+                    <th style="padding: 8px 6px; text-align: right;">Unicast Speedtest</th>
+                  </tr>
+                </thead>
+                <tbody id="radar-region-tbody">
+                  <tr><td colspan="6" style="padding: 14px; text-align: center; color: var(--text-muted);">Click "Ping 6 Global Regions Live" to measure international latency to India, Singapore, Tokyo, Germany, UK &amp; USA.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: 24H CONTINUOUS CONGESTION SOAK MONITOR -->
+        <div class="pro-lab-pane" id="pro-pane-soak">
+          <div class="pro-lab-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <strong style="font-size: 13.5px; color: var(--amber);">⏱️ Continuous 24h ISP SLA &amp; Evening Congestion Monitor</strong>
+                <div style="font-size: 12px; color: var(--text-muted);">Leave this tab open to catch evening throttling, packet drops &amp; latency spikes with UTC-stamped SLA proof CSV (zero backend logs).</div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <select id="soak-interval-select" style="background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px;">
+                  <option value="60">Every 1 min</option>
+                  <option value="300" selected>Every 5 min</option>
+                  <option value="900">Every 15 min</option>
+                  <option value="1800">Every 30 min</option>
+                </select>
+                <select id="soak-probe-select" style="background: var(--bg-surface); color: var(--text-main); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12px;">
+                  <option value="ping">Ping + Loss (~15 KB/run)</option>
+                  <option value="micro">Micro Speed + Ping (~1 MB/run)</option>
+                </select>
+                <button type="button" class="pro-btn-primary" id="btn-soak-toggle" onclick="toggleSoakMonitor()">▶ Start Monitor</button>
+                <button type="button" class="pro-btn-secondary" onclick="runSingleSoakSample()">⚡ Sample Now</button>
+                <button type="button" class="pro-btn-secondary" onclick="exportSoakCsv()">📥 Export SLA CSV</button>
+                <button type="button" class="pro-btn-secondary" onclick="clearSoakLogs()">🗑️</button>
+              </div>
+            </div>
+            <div class="pro-kpi-row">
+              <div class="pro-kpi-box"><div class="pro-kpi-lbl">Samples Logged</div><div class="pro-kpi-val" id="soak-count-val">0</div></div>
+              <div class="pro-kpi-box"><div class="pro-kpi-lbl">Avg Latency</div><div class="pro-kpi-val" id="soak-avg-val">--</div></div>
+              <div class="pro-kpi-box"><div class="pro-kpi-lbl">Spikes (&gt;100ms)</div><div class="pro-kpi-val" id="soak-spike-val">0</div></div>
+              <div class="pro-kpi-box"><div class="pro-kpi-lbl">Status</div><div class="pro-kpi-val" id="soak-status-val" style="font-size: 12px;">Idle</div></div>
+            </div>
+            <canvas id="soak-trend-canvas" style="width: 100%; height: 110px; display: block; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border);"></canvas>
+            <div id="soak-recent-log" style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); max-height: 115px; overflow-y: auto; line-height: 1.55;">No soak samples recorded yet. Click "Start Monitor" or "Sample Now".</div>
+          </div>
+        </div>
+
+        <!-- TAB 4: 10G+ NATIVE CLI COMPANION (bm97-cli) -->
+        <div class="pro-lab-pane" id="pro-pane-cli">
+          <div class="pro-lab-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <div>
+                <strong style="font-size: 13.5px; color: var(--violet);">⚡ bm97-cli — 10 Gbps+ Zero-Dependency Native Terminal Speedtest</strong>
+                <div style="font-size: 12px; color: var(--text-muted);">Bypass browser ~2.5G memory caps on Linux/macOS/Windows servers using Node.js 18+/24+ parallel streams — prints a signed <code>?verify=</code> URL that opens directly in BillMaster97 for A4 PDF export.</div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="pro-btn-primary" onclick="downloadBm97CliFile()">⬇ Download bm97-cli.mjs</button>
+                <button type="button" class="pro-btn-secondary" onclick="copyBm97CliCode()">📋 Copy Script</button>
+              </div>
+            </div>
+            <pre id="bm97-cli-preview" style="margin: 0; padding: 12px; background: rgba(4, 8, 18, 0.85); border: 1px solid var(--border); border-radius: 8px; font-family: var(--font-mono); font-size: 11.5px; color: #38bdf8; overflow-x: auto; max-height: 175px; line-height: 1.45;">Loading native CLI script...</pre>
+          </div>
         </div>
       </section>
 
@@ -4297,11 +4612,20 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       if (icon) icon.textContent = saved === 'dark' ? '🌙' : '☀️';
     })();
 
-    // Connections Mode Toggle
-    let isMulti = true;
+    // Connections Mode Toggle (Multi / Single / Full-Duplex)
+    let isMulti = (localStorage.getItem('bm97_conn_mode') || 'multi') !== 'single';
     function toggleConnMode() {
-      isMulti = !isMulti;
-      document.getElementById('conn-mode-text').textContent = isMulti ? 'Multi ⇄' : 'Single ⇄';
+      const order = ['multi', 'single', 'duplex'];
+      const cur = (typeof bmSettings !== 'undefined' && bmSettings.conn) ? bmSettings.conn : 'multi';
+      const next = order[(order.indexOf(cur) + 1) % order.length];
+      isMulti = (next !== 'single');
+      if (typeof setSetting === 'function') {
+        setSetting('conn', next);
+      } else {
+        const lbl = next === 'single' ? 'Single ⇄' : (next === 'duplex' ? 'Full-Duplex ⇄' : 'Multi ⇄');
+        const el = document.getElementById('conn-mode-text');
+        if (el) el.textContent = lbl;
+      }
     }
 
     // NPS and Share
@@ -5334,6 +5658,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       if (e.key === 'Escape') {
         closeResultsModal();
         closeSettingsModal();
+        if (typeof closeServerPickerModal === 'function') closeServerPickerModal();
       }
     });
 
@@ -5516,7 +5841,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       conn: localStorage.getItem('bm97_conn_mode') || 'multi',
       duration: localStorage.getItem('bm97_test_duration') || '5s',
       sound: (localStorage.getItem('bm97_speedtest_sound') !== 'false') ? 'on' : 'off',
-      server: localStorage.getItem('bm97_server_name') || ''
+      server: localStorage.getItem('bm97_server_name') || '',
+      serverEngine: localStorage.getItem('bm97_server_engine') || 'cloudflare',
+      mlabCountry: localStorage.getItem('bm97_mlab_country') || ''
     };
 
     function setSetting(key, val) {
@@ -5524,7 +5851,10 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       if (key === 'time') localStorage.setItem('bm97_time_format', val);
       if (key === 'dist') localStorage.setItem('bm97_dist_unit', val);
       if (key === 'speed') localStorage.setItem('bm97_speed_unit', val);
-      if (key === 'conn') localStorage.setItem('bm97_conn_mode', val);
+      if (key === 'conn') {
+        localStorage.setItem('bm97_conn_mode', val);
+        isMulti = (val !== 'single');
+      }
       if (key === 'duration') localStorage.setItem('bm97_test_duration', val);
       if (key === 'sound') {
         isSoundEnabled = (val === 'on');
@@ -5532,6 +5862,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         if (typeof updateSoundButtonUI === 'function') updateSoundButtonUI();
       }
       if (key === 'server') localStorage.setItem('bm97_server_name', val);
+      if (key === 'serverEngine') localStorage.setItem('bm97_server_engine', val);
+      if (key === 'mlabCountry') localStorage.setItem('bm97_mlab_country', val);
 
       applySettingsToApp();
       updateSettingsUI();
@@ -5569,10 +5901,18 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         }
       }
 
-      // 3. Update Connection Mode
+      // 3. Update Connection Mode & Route Engine Label
       const connText = document.getElementById('conn-mode-text');
+      const connLabel = bmSettings.conn === 'single' ? 'Single' : (bmSettings.conn === 'duplex' ? 'Full-Duplex' : 'Multi');
       if (connText) {
-        connText.textContent = bmSettings.conn === 'multi' ? 'Multi' : 'Single';
+        connText.textContent = connLabel + ' ⇄';
+      }
+      const routeDisp = document.getElementById('disp-route-engine');
+      if (routeDisp) {
+        const engText = (bmSettings.serverEngine === 'mlab' && bmSettings.mlabCountry)
+          ? ('M-Lab Unicast (' + bmSettings.mlabCountry + ')')
+          : 'Cloudflare Anycast';
+        routeDisp.textContent = engText + ' · ' + connLabel;
       }
 
       // 4. Update Server Name Display
@@ -5614,8 +5954,10 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       // Connection socket pills
       const cMulti = document.getElementById('btn-conn-multi');
       const cSingle = document.getElementById('btn-conn-single');
+      const cDuplex = document.getElementById('btn-conn-duplex');
       if (cMulti) cMulti.classList.toggle('active', bmSettings.conn === 'multi');
       if (cSingle) cSingle.classList.toggle('active', bmSettings.conn === 'single');
+      if (cDuplex) cDuplex.classList.toggle('active', bmSettings.conn === 'duplex');
 
       // Test Duration Pills (1, 2, 3: 3s, 5s, 10s)
       const dur = bmSettings.duration || '5s';
@@ -5874,47 +6216,94 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       console.log('Location updated to: ' + (label || city));
     }
 
+    const MLAB_UNIVERSE = {
+      IN: { country: 'IN', city: 'New Delhi / Mumbai', label: 'M-Lab Unicast — India (National Backbone)', sub: 'Direct Unicast WebSocket + Linux TCPInfo kernel packet loss', cx: 1428.9, cy: 341.0, lat: 28.6139, lon: 77.2090 },
+      SG: { country: 'SG', city: 'Singapore', label: 'M-Lab Unicast — Singapore (SE Asia Hub)', sub: 'Cross-sea international route via Singapore Unicast node', cx: 1576.8, cy: 492.5, lat: 1.3521, lon: 103.8198 },
+      DE: { country: 'DE', city: 'Frankfurt', label: 'M-Lab Unicast — Frankfurt (EU Central Hub)', sub: 'International India/Global -> Europe DE-CIX Unicast path', cx: 1048.2, cy: 221.6, lat: 50.1109, lon: 8.6821 },
+      GB: { country: 'GB', city: 'Dublin / UK Edge', label: 'M-Lab Unicast — UK / Ireland (West Europe)', sub: 'Transatlantic & Western Europe Unicast node + kernel loss', cx: 999.3, cy: 213.8, lat: 53.3498, lon: -6.2603 },
+      US: { country: 'US', city: 'Dallas / US Central', label: 'M-Lab Unicast — USA (North America Backbone)', sub: 'Transcontinental submarine cable latency & throughput proof', cx: 452.0, cy: 295.0, lat: 32.7767, lon: -96.7970 },
+      JP: { country: 'JP', city: 'Tokyo', label: 'M-Lab Unicast — Tokyo (East Asia Backbone)', sub: 'Pacific Rim international Unicast routing & kernel TCPInfo', cx: 1776.0, cy: 298.0, lat: 35.6762, lon: 139.6503 }
+    };
+
     function promptChangeServer() {
-      const localSrv = findNearestEdgeServer(clientNetwork.city, clientNetwork.region, clientNetwork.country, clientNetwork.lat, clientNetwork.lon, clientNetwork.isp);
-      const servers = [
-        { name: localSrv.name, city: localSrv.city, ping: 'Auto BGP Anycast', loc: localSrv.node, cx: localSrv.cx, cy: localSrv.cy },
-        { name: 'Cloudflare Anycast Edge (Kolkata CCU)', city: 'Kolkata', ping: 'East India Edge', loc: 'Kolkata Anycast POP (CCU)', cx: 1490.9, cy: 374.6 },
-        { name: 'Cloudflare Anycast Edge (Mumbai BOM)', city: 'Mumbai', ping: 'West India Edge', loc: 'Mumbai Anycast POP (BOM)', cx: 1404.9, cy: 394.0 },
-        { name: 'Cloudflare Anycast Edge (New Delhi DEL)', city: 'New Delhi', ping: 'North India Edge', loc: 'New Delhi Anycast POP (DEL)', cx: 1428.9, cy: 341.0 },
-        { name: 'Cloudflare Anycast Edge (Bengaluru BLR)', city: 'Bengaluru', ping: 'South India Edge', loc: 'Bengaluru Anycast POP (BLR)', cx: 1431.1, cy: 427.9 },
-        { name: 'Cloudflare Anycast Edge (Singapore SIN)', city: 'Singapore', ping: 'SE Asia Hub', loc: 'Singapore Anycast POP (SIN)', cx: 1576.8, cy: 492.5 },
-        { name: 'Cloudflare Anycast Edge (Dubai DXB)', city: 'Dubai', ping: 'Middle East Hub', loc: 'Dubai Anycast POP (DXB)', cx: 1307.1, cy: 360.0 },
-        { name: 'Cloudflare Anycast Edge (Frankfurt FRA)', city: 'Frankfurt', ping: 'Central Europe', loc: 'Frankfurt Anycast POP (FRA)', cx: 1048.2, cy: 221.6 },
-        { name: 'Cloudflare Anycast Edge (London LHR)', city: 'London', ping: 'UK Edge', loc: 'London Anycast POP (LHR)', cx: 999.3, cy: 213.8 },
-        { name: 'Cloudflare Anycast Edge (New York JFK)', city: 'New York', ping: 'US East', loc: 'New York Anycast POP (JFK)', cx: 588.9, cy: 273.8 }
+      openServerPickerModal();
+    }
+
+    function openServerPickerModal() {
+      const modal = document.getElementById('modal-server-picker');
+      const list = document.getElementById('server-picker-list');
+      if (!modal || !list) return;
+      const curEng = bmSettings.serverEngine || 'cloudflare';
+      const curCountry = bmSettings.mlabCountry || '';
+
+      const options = [
+        {
+          engine: 'cloudflare',
+          country: '',
+          title: 'Cloudflare Anycast Edge (Optimal Auto — Default)',
+          badge: 'Fastest · 330+ POPs',
+          desc: 'Lowest latency closest POP via speed.cloudflare.com + XHR cellular support up to 2.5G.',
+          active: curEng === 'cloudflare'
+        },
+        ...Object.values(MLAB_UNIVERSE).map(m => ({
+          engine: 'mlab',
+          country: m.country,
+          title: m.label,
+          badge: 'True Unicast · ' + m.country,
+          desc: m.sub,
+          active: curEng === 'mlab' && curCountry === m.country
+        }))
       ];
 
-      const uniqueServers = [];
-      const seen = new Set();
-      for (const s of servers) {
-        if (!seen.has(s.name)) {
-          seen.add(s.name);
-          uniqueServers.push(s);
-        }
-      }
+      list.innerHTML = options.map(opt => `
+        <button type="button" class="server-picker-option ${opt.active ? 'active' : ''}" onclick="selectServerMode('${opt.engine}', '${opt.country}')">
+          <div>
+            <div style="font-weight: 700; font-size: 13px; color: ${opt.active ? 'var(--cyan)' : 'var(--text-main)'};">${opt.title}</div>
+            <div style="font-size: 11.5px; color: var(--text-muted); margin-top: 2px;">${opt.desc}</div>
+          </div>
+          <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); color: var(--cyan); white-space: nowrap;">${opt.badge}</span>
+        </button>
+      `).join('');
 
-      const promptText = 'Select Display / Audit Reference Anycast POP\n(Traffic automatically routes via Cloudflare BGP Anycast):\n\n' + uniqueServers.map((s, i) => (i + 1) + '. ' + s.name + ' [' + s.ping + ']').join('\n');
-      const choice = prompt(promptText, '1');
-      const selIdx = parseInt(choice, 10) - 1;
-      if (selIdx >= 0 && selIdx < uniqueServers.length) {
-        const sel = uniqueServers[selIdx];
-        setSetting('server', sel.name);
-        clientNetwork.server = sel.name;
-        clientNetwork.serverCity = sel.city;
-        clientNetwork.serverLocation = sel.loc;
-        clientNetwork.serverCx = sel.cx;
-        clientNetwork.serverCy = sel.cy;
-        updateNetworkUI();
-        const pingElem = document.getElementById('settings-active-ping');
-        if (pingElem) pingElem.textContent = sel.ping;
-        const nodeElem = document.getElementById('settings-routing-node');
-        if (nodeElem) nodeElem.textContent = sel.loc;
+      modal.classList.add('active');
+    }
+
+    function closeServerPickerModal() {
+      const modal = document.getElementById('modal-server-picker');
+      if (modal) modal.classList.remove('active');
+    }
+
+    function selectServerMode(engine, countryCode) {
+      setSetting('serverEngine', engine);
+      setSetting('mlabCountry', countryCode || '');
+      if (engine === 'mlab' && MLAB_UNIVERSE[countryCode]) {
+        const m = MLAB_UNIVERSE[countryCode];
+        const sName = 'M-Lab Unicast (' + m.city + ' ' + m.country + ')';
+        setSetting('server', sName);
+        clientNetwork.server = sName;
+        clientNetwork.serverCity = m.city;
+        clientNetwork.serverIata = m.country;
+        clientNetwork.serverLocation = m.label;
+        clientNetwork.serverLat = m.lat;
+        clientNetwork.serverLon = m.lon;
+        clientNetwork.serverCx = m.cx;
+        clientNetwork.serverCy = m.cy;
+      } else {
+        setSetting('server', '');
+        const defSrv = findNearestEdgeServer(clientNetwork.city, clientNetwork.region, clientNetwork.country, clientNetwork.lat, clientNetwork.lon, clientNetwork.isp);
+        clientNetwork.server = defSrv.name;
+        clientNetwork.serverCity = defSrv.city;
+        clientNetwork.serverIata = defSrv.iata || 'EDGE';
+        clientNetwork.serverLocation = defSrv.node;
+        clientNetwork.serverLat = defSrv.lat;
+        clientNetwork.serverLon = defSrv.lon;
+        clientNetwork.serverCx = defSrv.cx;
+        clientNetwork.serverCy = defSrv.cy;
+        applyServerRouting(clientNetwork.lat, clientNetwork.lon, clientNetwork.city, clientNetwork.region, clientNetwork.country, clientNetwork.isp);
       }
+      applySettingsToApp();
+      updateNetworkUI();
+      closeServerPickerModal();
     }
 
     function resetSettings() {
@@ -5924,13 +6313,19 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       setSetting('conn', 'multi');
       setSetting('duration', '5s');
       setSetting('sound', 'on');
+      setSetting('serverEngine', 'cloudflare');
+      setSetting('mlabCountry', '');
       const defSrv = findNearestEdgeServer(clientNetwork.city, clientNetwork.region, clientNetwork.country, clientNetwork.lat, clientNetwork.lon, clientNetwork.isp);
-      setSetting('server', defSrv.name);
+      setSetting('server', '');
       clientNetwork.server = defSrv.name;
       clientNetwork.serverCity = defSrv.city;
+      clientNetwork.serverIata = defSrv.iata || 'EDGE';
       clientNetwork.serverLocation = defSrv.node;
+      clientNetwork.serverLat = defSrv.lat;
+      clientNetwork.serverLon = defSrv.lon;
       clientNetwork.serverCx = defSrv.cx;
       clientNetwork.serverCy = defSrv.cy;
+      applyServerRouting(clientNetwork.lat, clientNetwork.lon, clientNetwork.city, clientNetwork.region, clientNetwork.country, clientNetwork.isp);
       updateNetworkUI();
       alert('Settings reset to Sovereign Defaults.');
     }
@@ -6420,12 +6815,12 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
       }
 
-      function plot(samples, strokeColor, fillColor) {
+      function plot(samples, strokeColor, fillColor, maxT, maxV) {
         if (!samples.length) return;
         ctx.beginPath();
         samples.forEach((pt, i) => {
-          const x = (pt.t / 5.0) * (w - 20) + 10;
-          const y = h - (pt.v / 60) * (h - 25) - 10;
+          const x = (pt.t / maxT) * (w - 20) + 10;
+          const y = h - (pt.v / maxV) * (h - 25) - 10;
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         });
         ctx.strokeStyle = strokeColor;
@@ -6437,10 +6832,14 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         ctx.fillStyle = fillColor;
         ctx.fill();
       }
-      plot(downloadSamples, '#00d2ff', 'rgba(0, 210, 255, 0.15)');
-      plot(uploadSamples, '#a855f7', 'rgba(168, 85, 247, 0.12)');
+      const allPts = [...downloadSamples, ...uploadSamples];
+      const maxT = Math.max(5.0, ...allPts.map(p => p.t || 0));
+      const peakV = Math.max(1, ...allPts.map(p => p.v || 0));
+      const maxV = Math.max(5, peakV * 1.2);
+      plot(downloadSamples, '#00d2ff', 'rgba(0, 210, 255, 0.15)', maxT, maxV);
+      plot(uploadSamples, '#a855f7', 'rgba(168, 85, 247, 0.12)', maxT, maxV);
 
-      const p90Y = h - (49.8 / 60) * (h - 25) - 10;
+      const p90Y = h - (peakV * 0.9 / maxV) * (h - 25) - 10;
       ctx.beginPath();
       ctx.setLineDash([3, 3]);
       ctx.strokeStyle = 'rgba(0, 210, 255, 0.7)';
@@ -6527,7 +6926,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         ['Cloud Sync & Uploads QoE', qoeData.uploads.score + ' / 10', qoeData.uploads.sub],
         ['Instant Web Browsing QoE', qoeData.browsing.score + ' / 10', qoeData.browsing.sub],
         ['Line Stability & Consistency', qoeData.stability.score, qoeData.stability.sub],
-        ['Connection Architecture', (typeof isMulti !== 'undefined' && !isMulti) ? 'Single-Socket TCP Stream' : 'Multi-Socket Parallel TCP Streams', ''],
+        ['Connection Architecture', (bmSettings?.conn === 'single' ? 'Single-Socket TCP Stream' : (bmSettings?.conn === 'duplex' ? 'Simultaneous Full-Duplex Bi-Di Streams' : 'Multi-Socket Parallel TCP Streams')), ''],
         ['Negotiated Route Protocol', snap.protocol, ''],
         ['Integrity Hash (SHA-256)', snap.hash, ''],
         ['Verification URL', snap.verifyUrl, ''],
@@ -6827,6 +7226,21 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     };
 
     function applyServerRouting(lat, lon, ipCity, ipRegion, ipCountry, isp) {
+      const savedEngine = localStorage.getItem('bm97_server_engine') || bmSettings?.serverEngine || 'cloudflare';
+      const savedCountry = localStorage.getItem('bm97_mlab_country') || bmSettings?.mlabCountry || '';
+      if (savedEngine === 'mlab' && savedCountry && typeof MLAB_UNIVERSE !== 'undefined' && MLAB_UNIVERSE[savedCountry]) {
+        const m = MLAB_UNIVERSE[savedCountry];
+        clientNetwork.server = localStorage.getItem('bm97_server_name') || ('M-Lab Unicast (' + m.city + ' ' + m.country + ')');
+        clientNetwork.serverCity = m.city;
+        clientNetwork.serverIata = m.country;
+        clientNetwork.serverLocation = m.label;
+        clientNetwork.serverLat = m.lat;
+        clientNetwork.serverLon = m.lon;
+        clientNetwork.serverCx = m.cx;
+        clientNetwork.serverCy = m.cy;
+        return;
+      }
+
       const savedServer = localStorage.getItem('bm97_server_name');
 
       if (savedServer &&
@@ -7420,6 +7834,64 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       }
     }
 
+    function drawHistoryTrendCanvas(history) {
+      const wrap = document.getElementById('history-trend-wrap');
+      const cvs = document.getElementById('history-trend-canvas');
+      const sum = document.getElementById('history-trend-summary');
+      if (!wrap || !cvs) return;
+      if (!history || history.length < 2) {
+        wrap.style.display = 'none';
+        return;
+      }
+      wrap.style.display = 'block';
+      const pts = [...history].slice(0, 20).reverse();
+      const dVals = pts.map(p => parseFloat(p.down) || 0);
+      const uVals = pts.map(p => parseFloat(p.up) || 0);
+      const pVals = pts.map(p => parseFloat(p.ping) || 0);
+      if (sum) {
+        const avgD = (dVals.reduce((a, b) => a + b, 0) / dVals.length).toFixed(1);
+        const avgP = Math.round(pVals.reduce((a, b) => a + b, 0) / pVals.length);
+        sum.textContent = 'Last ' + pts.length + ' runs · Avg ' + avgD + ' Mbps · ' + avgP + 'ms Ping';
+      }
+
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(300, cvs.clientWidth || wrap.clientWidth - 24 || 640);
+      const h = 110;
+      cvs.width = w * dpr;
+      cvs.height = h * dpr;
+      const c = cvs.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.clearRect(0, 0, w, h);
+
+      const maxSpeed = Math.max(5, ...dVals, ...uVals) * 1.15;
+      const maxPing = Math.max(50, ...pVals) * 1.15;
+
+      c.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+      c.lineWidth = 1;
+      for (let g = 1; g <= 3; g++) {
+        const gy = (h / 4) * g;
+        c.beginPath(); c.moveTo(0, gy); c.lineTo(w, gy); c.stroke();
+      }
+
+      const drawSeries = (arr, maxVal, color, dashed) => {
+        c.beginPath();
+        c.setLineDash(dashed ? [4, 3] : []);
+        arr.forEach((v, idx) => {
+          const x = 10 + (idx / Math.max(1, arr.length - 1)) * (w - 20);
+          const y = (h - 12) - (v / maxVal) * (h - 24);
+          if (idx === 0) c.moveTo(x, y); else c.lineTo(x, y);
+        });
+        c.strokeStyle = color;
+        c.lineWidth = 2;
+        c.stroke();
+        c.setLineDash([]);
+      };
+
+      drawSeries(dVals, maxSpeed, '#00d2ff', false);
+      drawSeries(uVals, maxSpeed, '#a855f7', false);
+      drawSeries(pVals, maxPing, '#f59e0b', true);
+    }
+
     function renderInlineHistoryTable() {
       const tbody = document.getElementById('inline-history-tbody');
       const countBadge = document.getElementById('inline-history-count');
@@ -7427,6 +7899,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       try {
         const history = JSON.parse(localStorage.getItem('bm97_test_history') || '[]');
         if (countBadge) countBadge.textContent = history.length + (history.length === 1 ? ' test' : ' tests');
+        drawHistoryTrendCanvas(history);
         if (history.length === 0) {
           tbody.innerHTML = '<tr><td colspan="9" style="padding: 16px; text-align: center; color: var(--text-muted);">No speed tests recorded yet. Click GO to benchmark!</td></tr>';
           return;
@@ -7542,6 +8015,266 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       initAutoDetection();
     }
 
+    function computeSustainedMbps(totalBytes, warmupBytes, totalSec, sustainedSec, warmupPassed) {
+      let mbps = 0;
+      const effBytes = totalBytes - (warmupPassed ? warmupBytes : 0);
+      if (warmupPassed && sustainedSec > 0.2 && effBytes > 0) {
+        mbps = (effBytes * 8) / (sustainedSec * 1000000);
+      } else if (totalSec > 0.2 && totalBytes > 0) {
+        mbps = (totalBytes * 8) / (totalSec * 1000000);
+      }
+      return Math.max(0.05, mbps || 0.05);
+    }
+
+    function probeUdpStunReachability() {
+      return new Promise((resolve) => {
+        if (typeof RTCPeerConnection !== 'function') {
+          resolve({ ok: false, rtt: null, label: 'TCP Fallback' });
+          return;
+        }
+        let finished = false;
+        let pc = null;
+        const done = (res) => {
+          if (finished) return;
+          finished = true;
+          try { if (pc) pc.close(); } catch (e) {}
+          resolve(res);
+        };
+        const timer = setTimeout(() => done({ ok: false, rtt: null, label: 'UDP NAT Strict' }), 1700);
+        try {
+          const t0 = performance.now();
+          pc = new RTCPeerConnection({
+            iceServers: [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302'] }]
+          });
+          pc.createDataChannel('bm97-udp-probe');
+          pc.onicecandidate = (ev) => {
+            if (!ev || !ev.candidate || !ev.candidate.candidate) return;
+            const c = ev.candidate.candidate;
+            if (c.indexOf(' typ srflx ') !== -1 || c.indexOf(' typ prflx ') !== -1) {
+              const rtt = Math.max(1, Math.round(performance.now() - t0));
+              clearTimeout(timer);
+              done({ ok: true, rtt, label: 'UDP Open (' + rtt + 'ms STUN)' });
+            }
+          };
+          pc.createOffer().then(o => pc.setLocalDescription(o)).catch(() => {
+            clearTimeout(timer);
+            done({ ok: false, rtt: null, label: 'TCP Fallback' });
+          });
+        } catch (e) {
+          clearTimeout(timer);
+          done({ ok: false, rtt: null, label: 'TCP Fallback' });
+        }
+      });
+    }
+
+    async function runMlabUnicastEngine(countryCode, downMs, upMs, uiRefs) {
+      const ctrl = new AbortController();
+      const locTimer = setTimeout(() => ctrl.abort(), 5000);
+      let locJson = null;
+      try {
+        const query = countryCode ? ('?country=' + encodeURIComponent(countryCode)) : '';
+        const res = await fetch('https://locate.measurementlab.net/v2/nearest/ndt/ndt7' + query, { signal: ctrl.signal });
+        clearTimeout(locTimer);
+        if (!res.ok) return { ok: false };
+        locJson = await res.json();
+      } catch (e) {
+        clearTimeout(locTimer);
+        return { ok: false };
+      }
+
+      const target = (locJson && locJson.results && locJson.results[0]) || null;
+      const dlUrl = target && target.urls && target.urls['wss:///ndt/v7/download'];
+      const ulUrl = target && target.urls && target.urls['wss:///ndt/v7/upload'];
+      if (!dlUrl || !ulUrl) return { ok: false };
+
+      const hostShort = String(target.machine || '').split('.')[0] || 'mlab-node';
+      const city = (target.location && target.location.city) || countryCode || 'Unicast';
+      const ctry = (target.location && target.location.country) || countryCode || '';
+      clientNetwork.server = 'M-Lab Unicast (' + city + (ctry ? ' ' + ctry : '') + ' · ' + hostShort + ')';
+      clientNetwork.protocol = 'WebSocket NDT7 (TLS 1.3)';
+      updateNetworkUI();
+
+      const dlCapMs = Math.min(downMs, 9200);
+      const ulCapMs = Math.min(upMs, 8500);
+
+      // M-Lab Download Phase
+      const dlStats = await new Promise((resolve) => {
+        const ws = new WebSocket(dlUrl, 'net.measurementlab.ndt.v7');
+        ws.binaryType = 'arraybuffer';
+        let tStart = 0;
+        let totalBytes = 0;
+        let warmupBytes = 0;
+        let warmupT = 0;
+        let warmupOk = false;
+        let minRtts = [];
+        let loadedRtts = [];
+        let kernelLoss = null;
+        let resolved = false;
+
+        const finish = () => {
+          if (resolved) return;
+          resolved = true;
+          clearInterval(ticker);
+          try { ws.close(); } catch (e) {}
+          const totSec = tStart ? (performance.now() - tStart) / 1000 : 0.1;
+          const susSec = warmupOk ? (performance.now() - warmupT) / 1000 : totSec;
+          resolve({
+            ok: totalBytes > 0,
+            mbps: computeSustainedMbps(totalBytes, warmupBytes, totSec, susSec, warmupOk),
+            minRtts,
+            loadedRtts,
+            kernelLoss
+          });
+        };
+
+        ws.onopen = () => { tStart = performance.now(); };
+
+        const dlWarmupTarget = Math.min(1.1, (dlCapMs / 1000) * 0.28);
+        const ticker = setInterval(() => {
+          if (!tStart) return;
+          const elSec = (performance.now() - tStart) / 1000;
+          if (elSec >= dlWarmupTarget) {
+            if (!warmupOk) { warmupOk = true; warmupBytes = totalBytes; warmupT = performance.now(); }
+            const sSec = (performance.now() - warmupT) / 1000;
+            if (sSec > 0.1) {
+              const cur = ((totalBytes - warmupBytes) * 8) / (sSec * 1000000);
+              if (uiRefs.dispDown) uiRefs.dispDown.textContent = cur.toFixed(2);
+              downloadSamples.push({ t: Number(elSec.toFixed(1)), v: Number(cur.toFixed(2)) });
+              drawThroughputCurves();
+              drawQoERadar(0.3 + 0.35 * Math.min(1, elSec / (dlCapMs / 1000)));
+            }
+          }
+          if (performance.now() - tStart >= dlCapMs) finish();
+        }, 120);
+
+        ws.onmessage = (ev) => {
+          if (!tStart) tStart = performance.now();
+          if (typeof ev.data === 'string') {
+            try {
+              const m = JSON.parse(ev.data);
+              if (m.TCPInfo) {
+                if (m.TCPInfo.MinRTT > 0) minRtts.push(m.TCPInfo.MinRTT / 1000);
+                if (m.TCPInfo.RTT > 0) {
+                  const rMs = Math.max(1, Math.round(m.TCPInfo.RTT / 1000));
+                  loadedRtts.push(rMs);
+                  if (uiRefs.dispLoaded) uiRefs.dispLoaded.textContent = rMs;
+                }
+                if (m.TCPInfo.BytesSent > 0 && typeof m.TCPInfo.BytesRetrans === 'number') {
+                  kernelLoss = Math.min(25, (m.TCPInfo.BytesRetrans / m.TCPInfo.BytesSent) * 100);
+                  if (uiRefs.dispLoss) uiRefs.dispLoss.textContent = kernelLoss.toFixed(1) + '%';
+                }
+              }
+            } catch (e) {}
+          } else if (ev.data && ev.data.byteLength) {
+            totalBytes += ev.data.byteLength;
+          }
+        };
+        ws.onclose = finish;
+        ws.onerror = () => finish();
+        setTimeout(finish, dlCapMs + 3500);
+      });
+
+      if (!dlStats.ok) return { ok: false };
+
+      // M-Lab Upload Phase
+      if (uiRefs.dispUp) uiRefs.dispUp.textContent = '0.00';
+      uploadSamples = [{ t: 0, v: 0 }];
+      const ulStats = await new Promise((resolve) => {
+        const ws = new WebSocket(ulUrl, 'net.measurementlab.ndt.v7');
+        let tStart = 0;
+        let pumpedBytes = 0;
+        let serverAckBytes = 0;
+        let maxAck = 0;
+        let warmupBytes = 0;
+        let warmupT = 0;
+        let warmupOk = false;
+        let loadedRtts = [];
+        let resolved = false;
+        const smallChunk = new Uint8Array(16384);
+        const largeChunk = new Uint8Array(65536);
+        let chunksSent = 0;
+
+        const wireBytes = () => {
+          const est = Math.max(0, pumpedBytes - (ws.bufferedAmount || 0));
+          maxAck = Math.max(maxAck, serverAckBytes > 0 ? serverAckBytes : est);
+          return maxAck;
+        };
+
+        const finish = () => {
+          if (resolved) return;
+          resolved = true;
+          clearInterval(pumper);
+          clearInterval(ticker);
+          const finalWire = wireBytes();
+          try { ws.close(); } catch (e) {}
+          const totSec = tStart ? (performance.now() - tStart) / 1000 : 0.1;
+          const susSec = warmupOk ? (performance.now() - warmupT) / 1000 : totSec;
+          resolve({
+            mbps: computeSustainedMbps(finalWire, warmupBytes, totSec, susSec, warmupOk),
+            loadedRtts
+          });
+        };
+
+        ws.onopen = () => { tStart = performance.now(); };
+
+        const pumper = setInterval(() => {
+          if (ws.readyState !== 1 || !tStart) return;
+          if (performance.now() - tStart >= ulCapMs) { finish(); return; }
+          while (ws.bufferedAmount < 524288) {
+            const payload = chunksSent > 12 ? largeChunk : smallChunk;
+            try { ws.send(payload); pumpedBytes += payload.byteLength; chunksSent++; } catch (e) { break; }
+          }
+        }, 12);
+
+        const ulWarmupTarget = Math.min(1.0, (ulCapMs / 1000) * 0.30);
+        const ticker = setInterval(() => {
+          if (!tStart) return;
+          const elSec = (performance.now() - tStart) / 1000;
+          const wb = wireBytes();
+          if (elSec >= ulWarmupTarget) {
+            if (!warmupOk) { warmupOk = true; warmupBytes = wb; warmupT = performance.now(); }
+            const sSec = (performance.now() - warmupT) / 1000;
+            if (sSec > 0.1) {
+              const cur = ((wb - warmupBytes) * 8) / (sSec * 1000000);
+              if (cur >= 0 && uiRefs.dispUp) uiRefs.dispUp.textContent = cur.toFixed(2);
+              uploadSamples.push({ t: Number(elSec.toFixed(1)), v: Number(Math.max(0.05, cur).toFixed(2)) });
+              drawThroughputCurves();
+              drawQoERadar(0.65 + 0.35 * Math.min(1, elSec / (ulCapMs / 1000)));
+            }
+          }
+        }, 120);
+
+        ws.onmessage = (ev) => {
+          if (typeof ev.data !== 'string') return;
+          try {
+            const m = JSON.parse(ev.data);
+            if (m.AppInfo && m.AppInfo.NumBytes > serverAckBytes) serverAckBytes = m.AppInfo.NumBytes;
+            if (m.TCPInfo) {
+              if (m.TCPInfo.BytesReceived > serverAckBytes) serverAckBytes = m.TCPInfo.BytesReceived;
+              if (m.TCPInfo.RTT > 0) {
+                const rMs = Math.max(1, Math.round(m.TCPInfo.RTT / 1000));
+                loadedRtts.push(rMs);
+                if (uiRefs.dispUpPing) uiRefs.dispUpPing.textContent = rMs;
+              }
+            }
+          } catch (e) {}
+        };
+        ws.onclose = finish;
+        ws.onerror = () => finish();
+        setTimeout(finish, ulCapMs + 3500);
+      });
+
+      return {
+        ok: true,
+        downMbps: dlStats.mbps,
+        upMbps: ulStats.mbps,
+        loadedDown: dlStats.loadedRtts.length ? dlStats.loadedRtts.sort((a, b) => a - b)[Math.floor(dlStats.loadedRtts.length / 2)] : null,
+        loadedUp: ulStats.loadedRtts.length ? ulStats.loadedRtts.sort((a, b) => a - b)[Math.floor(ulStats.loadedRtts.length / 2)] : null,
+        minPing: dlStats.minRtts.length ? Math.round(Math.min(...dlStats.minRtts)) : null,
+        kernelLoss: dlStats.kernelLoss
+      };
+    }
+
     async function startSpeedTest() {
       if (isTesting) return;
       isTesting = true;
@@ -7610,22 +8343,46 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         detectClientNetwork();
       }
 
-      // ─── PHASE 1: REAL IDLE LATENCY (PING, RFC 3393 JITTER, PACKET LOSS, DNS & PROTOCOL) ───
+      // ─── PHASE 1: REAL IDLE LATENCY (PING, p95 TAIL, RFC 3393 JITTER, UDP STUN, DNS & PROTOCOL) ───
       let measuredPing = 24;
       let measuredLoss = 0.0;
       let measuredJitter = 1.5;
       let measuredDns = 0;
       let measuredDnsLabel = '<1ms';
+      let p95Ping = 24;
       let lostProbes = 0;
-      const totalProbes = 6;
+      const totalProbes = 12;
+      const phase1Start = performance.now();
+      const dispUdpStun = document.getElementById('disp-udp-stun');
+      const dispP95 = document.getElementById('disp-p95-ping');
+      const dispRoute = document.getElementById('disp-route-engine');
+      const connMode = bmSettings.conn || 'multi';
+      const activeEngine = bmSettings.serverEngine || 'cloudflare';
+      if (dispUdpStun) dispUdpStun.textContent = 'Probing UDP...';
+      if (dispP95) dispP95.textContent = '...';
+      if (dispRoute) {
+        const modeTxt = connMode === 'single' ? 'Single' : (connMode === 'duplex' ? 'Full-Duplex' : 'Multi');
+        dispRoute.textContent = (activeEngine === 'mlab' ? ('M-Lab Unicast (' + (bmSettings.mlabCountry || 'IN') + ')') : 'Cloudflare Anycast') + ' · ' + modeTxt;
+      }
+      const udpStunPromise = probeUdpStunReachability();
+
       const resBeforeIdx = (typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function')
         ? performance.getEntriesByType('resource').length : 0;
+      let actualProbeCount = 0;
       try {
         const pingProbesOrdered = [];
         for (let i = 0; i < totalProbes; i++) {
+          if (i >= 6 && (performance.now() - phase1Start) > 4500) break;
+          actualProbeCount++;
           const t0 = performance.now();
+          const probeAbort = new AbortController();
+          const probeTimer = setTimeout(() => probeAbort.abort(), 1600);
           try {
-            const pRes = await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now() + '_' + i, { cache: 'no-store' });
+            const pRes = await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now() + '_' + i, {
+              cache: 'no-store',
+              signal: probeAbort.signal
+            });
+            clearTimeout(probeTimer);
             const curPing = Math.max(1, Math.round(performance.now() - t0));
             pingProbesOrdered.push(curPing);
             const hColo = pRes.headers && pRes.headers.get && pRes.headers.get('cf-meta-colo');
@@ -7635,12 +8392,13 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
               updateNetworkUI();
             }
             if (dispPing) dispPing.textContent = curPing;
-            playSpeedTone(260 + i * 45, 55, 'sine');
+            playSpeedTone(240 + i * 28, 45, 'sine');
           } catch (e) {
+            clearTimeout(probeTimer);
             lostProbes++;
           }
         }
-        measuredLoss = ((lostProbes / totalProbes) * 100);
+        measuredLoss = ((lostProbes / Math.max(1, actualProbeCount)) * 100);
         if (pingProbesOrdered.length >= 2) {
           let ipdvSum = 0;
           for (let j = 1; j < pingProbesOrdered.length; j++) {
@@ -7651,8 +8409,10 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         if (pingProbesOrdered.length > 0) {
           const sortedPings = [...pingProbesOrdered].sort((a, b) => a - b);
           measuredPing = Math.round(sortedPings[Math.floor(sortedPings.length / 2)] || 24);
+          p95Ping = Math.round(sortedPings[Math.min(sortedPings.length - 1, Math.ceil(sortedPings.length * 0.95) - 1)] || measuredPing);
         } else {
           measuredPing = 24;
+          p95Ping = 24;
         }
 
         // Read actual browser PerformanceResourceTiming for DNS lookup & negotiated HTTP protocol
@@ -7676,6 +8436,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           }
         } catch (e) {}
 
+        const udpInfo = await udpStunPromise;
+        if (dispUdpStun) dispUdpStun.textContent = udpInfo.label;
+        if (dispP95) dispP95.textContent = p95Ping + 'ms';
         if (dispPing) dispPing.textContent = measuredPing;
         if (dispLoss) dispLoss.textContent = measuredLoss.toFixed(1) + '%';
         if (dispDns) dispDns.textContent = measuredDnsLabel;
@@ -7687,12 +8450,15 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         if (dispPing) dispPing.textContent = measuredPing;
         if (dispLoss) dispLoss.textContent = '0.0%';
         if (dispDns) dispDns.textContent = '<1ms';
+        if (dispP95) dispP95.textContent = '--';
+        if (dispUdpStun) dispUdpStun.textContent = 'TCP Fallback';
       }
 
-      // ─── PHASE 2: REAL MULTI-STREAM DOWNLOAD TEST (with Loaded Latency) ───
+      // ─── PHASE 2 & 3: THROUGHPUT ENGINE (M-LAB UNICAST OR CLOUDFLARE MULTI/SINGLE/FULL-DUPLEX) ───
       let finalDown = 0;
+      let finalUp = 0;
       let loadedPingDown = measuredPing;
-      const downStartTime = performance.now();
+      let loadedPingUp = measuredPing;
       const testProfile = bmSettings.duration || localStorage.getItem('bm97_test_duration') || '5s';
       let downDurationMs = 5200; // Default 5s
       let upDurationMs = 4200;
@@ -7703,248 +8469,324 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         downDurationMs = 10000;
         upDurationMs = 8000;
       }
-      let totalDownloadedBytes = 0;
-      let lastSampleTime = 0;
-      const downAbort = new AbortController();
 
-      // Background loaded ping probe during download
-      let pingDownRunning = true;
-      (async function probeDownLoadedPing() {
-        const pings = [];
-        while (pingDownRunning && performance.now() - downStartTime < downDurationMs) {
-          await new Promise(r => setTimeout(r, 600));
-          if (!pingDownRunning) break;
-          const pt0 = performance.now();
-          try {
-            await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now(), { cache: 'no-store', signal: downAbort.signal });
-            pings.push(performance.now() - pt0);
-            const curP = Math.max(1, Math.round(pings[pings.length - 1]));
-            if (dispLoaded) dispLoaded.textContent = curP;
-          } catch(e) {}
-        }
-        if (pings.length > 0) {
-          pings.sort((a, b) => a - b);
-          loadedPingDown = Math.round(pings[Math.floor(pings.length / 2)]);
-          if (dispLoaded) dispLoaded.textContent = loadedPingDown;
-        } else {
-          loadedPingDown = Math.round(measuredPing * 1.25);
-          if (dispLoaded) dispLoaded.textContent = loadedPingDown;
-        }
-      })();
-
-      // Centralized, collision-free measurement engine (RFC 6349 standard)
-      let downWarmupBytes = 0;
-      let downWarmupTime = 0;
-      let downWarmupPassed = false;
-      const WARMUP_DURATION = 1.6; // Discard first 1.6s TCP slow-start
-
-      const downSampler = setInterval(() => {
-        const nowT = performance.now();
-        const elapsedSec = (nowT - downStartTime) / 1000;
-
-        if (elapsedSec >= WARMUP_DURATION) {
-          if (!downWarmupPassed) {
-            downWarmupPassed = true;
-            downWarmupBytes = totalDownloadedBytes;
-            downWarmupTime = nowT;
+      let usedMlabEngine = false;
+      if (activeEngine === 'mlab') {
+        if (timeElem) timeElem.textContent = 'Connecting M-Lab Unicast Node (' + (bmSettings.mlabCountry || 'IN') + ')...';
+        const mlabRes = await runMlabUnicastEngine(bmSettings.mlabCountry || 'IN', downDurationMs, upDurationMs, {
+          dispDown, dispUp, dispLoaded, dispUpPing, dispLoss
+        });
+        if (mlabRes && mlabRes.ok) {
+          usedMlabEngine = true;
+          finalDown = mlabRes.downMbps;
+          finalUp = mlabRes.upMbps;
+          if (mlabRes.minPing && mlabRes.minPing > 0) {
+            measuredPing = mlabRes.minPing;
+            if (dispPing) dispPing.textContent = measuredPing;
           }
-          const sustainedBytes = totalDownloadedBytes - downWarmupBytes;
-          const sustainedSec = (nowT - downWarmupTime) / 1000;
-          if (sustainedSec > 0.1) {
-            const currentMbps = (sustainedBytes * 8) / (sustainedSec * 1000000);
-            if (dispDown) dispDown.textContent = currentMbps.toFixed(2);
-            downloadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(currentMbps.toFixed(2)) });
+          loadedPingDown = mlabRes.loadedDown || Math.round(measuredPing * 1.25);
+          loadedPingUp = mlabRes.loadedUp || Math.round(measuredPing * 1.45);
+          if (mlabRes.kernelLoss !== null && mlabRes.kernelLoss !== undefined) {
+            measuredLoss = mlabRes.kernelLoss;
+            if (dispLoss) dispLoss.textContent = measuredLoss.toFixed(1) + '%';
+          }
+          if (dispDown) dispDown.textContent = finalDown.toFixed(2);
+          if (dispUp) dispUp.textContent = finalUp.toFixed(2);
+          if (dispLoaded) dispLoaded.textContent = loadedPingDown;
+          if (dispUpPing) dispUpPing.textContent = loadedPingUp;
+          drawThroughputCurves();
+          drawQoERadar(1.0);
+        } else {
+          if (dispRoute) dispRoute.textContent = 'Cloudflare Anycast (M-Lab Fallback)';
+          applyServerRouting(clientNetwork.lat, clientNetwork.lon, clientNetwork.city, clientNetwork.region, clientNetwork.country, clientNetwork.isp);
+          updateNetworkUI();
+        }
+      }
+
+      if (!usedMlabEngine) {
+        const downStartTime = performance.now();
+        let totalDownloadedBytes = 0;
+        const downAbort = new AbortController();
+        const isDuplex = (connMode === 'duplex');
+        const activeDownDurMs = isDuplex ? Math.max(downDurationMs, upDurationMs) : downDurationMs;
+        let duplexUpBytes = 0;
+        let duplexUpWarmupBytes = 0;
+        let duplexUpWarmupTime = 0;
+        let duplexUpWarmupPassed = false;
+        const duplexUpAbort = new AbortController();
+        if (isDuplex) {
+          uploadSamples = [{ t: 0, v: 0 }];
+          if (dispUp) dispUp.textContent = '0.00';
+          if (timeElem) timeElem.textContent = 'Measuring Full-Duplex (Download + Upload Together)...';
+        }
+
+        // Background loaded ping probe during download (or full-duplex)
+        let pingDownRunning = true;
+        (async function probeDownLoadedPing() {
+          const pings = [];
+          while (pingDownRunning && performance.now() - downStartTime < activeDownDurMs) {
+            await new Promise(r => setTimeout(r, 600));
+            if (!pingDownRunning) break;
+            const pt0 = performance.now();
+            try {
+              await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now(), { cache: 'no-store', signal: downAbort.signal });
+              pings.push(performance.now() - pt0);
+              const curP = Math.max(1, Math.round(pings[pings.length - 1]));
+              if (dispLoaded) dispLoaded.textContent = curP;
+              if (isDuplex && dispUpPing) dispUpPing.textContent = curP;
+            } catch(e) {}
+          }
+          if (pings.length > 0) {
+            pings.sort((a, b) => a - b);
+            loadedPingDown = Math.round(pings[Math.floor(pings.length / 2)]);
+            if (dispLoaded) dispLoaded.textContent = loadedPingDown;
+            if (isDuplex) {
+              loadedPingUp = loadedPingDown;
+              if (dispUpPing) dispUpPing.textContent = loadedPingUp;
+            }
+          } else {
+            loadedPingDown = Math.round(measuredPing * 1.25);
+            if (dispLoaded) dispLoaded.textContent = loadedPingDown;
+            if (isDuplex) {
+              loadedPingUp = loadedPingDown;
+              if (dispUpPing) dispUpPing.textContent = loadedPingUp;
+            }
+          }
+        })();
+
+        // Centralized, collision-free measurement engine (RFC 6349 standard)
+        let downWarmupBytes = 0;
+        let downWarmupTime = 0;
+        let downWarmupPassed = false;
+        const WARMUP_DURATION = 1.6;
+
+        const downSampler = setInterval(() => {
+          const nowT = performance.now();
+          const elapsedSec = (nowT - downStartTime) / 1000;
+
+          if (elapsedSec >= WARMUP_DURATION) {
+            if (!downWarmupPassed) {
+              downWarmupPassed = true;
+              downWarmupBytes = totalDownloadedBytes;
+              downWarmupTime = nowT;
+            }
+            const sustainedBytes = totalDownloadedBytes - downWarmupBytes;
+            const sustainedSec = (nowT - downWarmupTime) / 1000;
+            if (sustainedSec > 0.1) {
+              const currentMbps = (sustainedBytes * 8) / (sustainedSec * 1000000);
+              if (dispDown) dispDown.textContent = currentMbps.toFixed(2);
+              downloadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(currentMbps.toFixed(2)) });
+            }
+            if (isDuplex) {
+              if (!duplexUpWarmupPassed) {
+                duplexUpWarmupPassed = true;
+                duplexUpWarmupBytes = duplexUpBytes;
+                duplexUpWarmupTime = nowT;
+              }
+              const sUpSec = (nowT - duplexUpWarmupTime) / 1000;
+              if (sUpSec > 0.1) {
+                const curUp = ((duplexUpBytes - duplexUpWarmupBytes) * 8) / (sUpSec * 1000000);
+                if (dispUp) dispUp.textContent = curUp.toFixed(2);
+                uploadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(curUp.toFixed(2)) });
+              }
+            }
             drawThroughputCurves();
-            drawQoERadar(0.3 + 0.35 * Math.min(1, elapsedSec / (downDurationMs / 1000)));
-            playSpeedTone(300 + Math.min(650, currentMbps * 8), 40, 'triangle');
+            drawQoERadar(0.3 + (isDuplex ? 0.7 : 0.35) * Math.min(1, elapsedSec / (activeDownDurMs / 1000)));
+            playSpeedTone(300 + Math.min(650, (parseFloat(dispDown?.textContent) || 10) * 8), 40, 'triangle');
+          } else {
+            const instantWarmup = elapsedSec > 0.1 ? (totalDownloadedBytes * 8) / (elapsedSec * 1000000) : 0;
+            if (dispDown) dispDown.textContent = instantWarmup.toFixed(2);
           }
-        } else {
-          const instantWarmup = elapsedSec > 0.1 ? (totalDownloadedBytes * 8) / (elapsedSec * 1000000) : 0;
-          if (dispDown) dispDown.textContent = instantWarmup.toFixed(2);
+        }, 100);
+
+        async function runDownloadStream(streamId) {
+          while (performance.now() - downStartTime < activeDownDurMs) {
+            try {
+              const chunkSize = 5000000; // 5MB chunks
+              const res = await fetch('https://speed.cloudflare.com/__down?bytes=' + chunkSize + '&t=' + Date.now() + '_' + streamId, {
+                cache: 'no-store',
+                signal: downAbort.signal
+              });
+              const reader = res.body.getReader();
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                totalDownloadedBytes += value.length;
+
+                if (performance.now() - downStartTime >= activeDownDurMs) {
+                  downAbort.abort();
+                  if (isDuplex) duplexUpAbort.abort();
+                  break;
+                }
+              }
+            } catch(e) {
+              break;
+            }
+          }
         }
-      }, 100);
 
-      async function runDownloadStream(streamId) {
-        while (performance.now() - downStartTime < downDurationMs) {
-          try {
-            const chunkSize = 5000000; // 5MB chunks
-            const res = await fetch('https://speed.cloudflare.com/__down?bytes=' + chunkSize + '&t=' + Date.now() + '_' + streamId, {
-              cache: 'no-store',
-              signal: downAbort.signal
-            });
-            const reader = res.body.getReader();
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              totalDownloadedBytes += value.length;
+        const upChunkSize = 262144; // 256KB payload chunk streamed via xhr.upload.onprogress
+        const upBlob = new Blob([new Uint8Array(upChunkSize)]);
 
-              if (performance.now() - downStartTime >= downDurationMs) {
-                downAbort.abort();
+        function runUploadChunkXhr(startTs, durMs, abortCtrl, onDeltaBytes) {
+          return new Promise((resolve) => {
+            if (performance.now() - startTs >= durMs || abortCtrl.signal.aborted) {
+              resolve(false);
+              return;
+            }
+            const xhr = new XMLHttpRequest();
+            let lastLoaded = 0;
+            const onAbort = () => { try { xhr.abort(); } catch(e) {} };
+            abortCtrl.signal.addEventListener('abort', onAbort, { once: true });
+
+            xhr.upload.onprogress = (ev) => {
+              const delta = Math.max(0, ev.loaded - lastLoaded);
+              lastLoaded = ev.loaded;
+              onDeltaBytes(delta);
+              if (performance.now() - startTs >= durMs) abortCtrl.abort();
+            };
+            xhr.onload = () => {
+              if (lastLoaded < upChunkSize) onDeltaBytes(upChunkSize - lastLoaded);
+              abortCtrl.signal.removeEventListener('abort', onAbort);
+              resolve(true);
+            };
+            xhr.onerror = xhr.onabort = () => {
+              abortCtrl.signal.removeEventListener('abort', onAbort);
+              resolve(false);
+            };
+            xhr.open('POST', 'https://speed.cloudflare.com/__up?t=' + Date.now() + '_' + Math.random(), true);
+            xhr.send(upBlob);
+          });
+        }
+
+        async function runDuplexUploadStream() {
+          while (performance.now() - downStartTime < activeDownDurMs && !duplexUpAbort.signal.aborted) {
+            const ok = await runUploadChunkXhr(downStartTime, activeDownDurMs, duplexUpAbort, (d) => { duplexUpBytes += d; });
+            if (!ok || performance.now() - downStartTime >= activeDownDurMs) {
+              duplexUpAbort.abort();
+              break;
+            }
+          }
+        }
+
+        // Launch streams honoring Connection Socket Mode: Multi (3), Single (1), or Full-Duplex (2 Down + 1 Up Concurrent)
+        try {
+          if (isDuplex) {
+            await Promise.all([runDownloadStream(1), runDownloadStream(2), runDuplexUploadStream()]);
+          } else if (connMode === 'single') {
+            await runDownloadStream(1);
+          } else {
+            await Promise.all([runDownloadStream(1), runDownloadStream(2), runDownloadStream(3)]);
+          }
+        } catch(e) {}
+        clearInterval(downSampler);
+        pingDownRunning = false;
+
+        // RFC 6349 final sustained download throughput
+        const totalDownSec = (performance.now() - downStartTime) / 1000;
+        const finalDownSec = (performance.now() - (downWarmupPassed ? downWarmupTime : downStartTime)) / 1000;
+        finalDown = computeSustainedMbps(totalDownloadedBytes, downWarmupBytes, totalDownSec, finalDownSec, downWarmupPassed);
+        if (dispDown) dispDown.textContent = finalDown.toFixed(2);
+        downloadSamples.push({ t: Number(totalDownSec.toFixed(1)), v: Number(finalDown.toFixed(2)) });
+
+        if (isDuplex) {
+          const finalUpSecDup = (performance.now() - (duplexUpWarmupPassed ? duplexUpWarmupTime : downStartTime)) / 1000;
+          finalUp = computeSustainedMbps(duplexUpBytes, duplexUpWarmupBytes, totalDownSec, finalUpSecDup, duplexUpWarmupPassed);
+          if (dispUp) dispUp.textContent = finalUp.toFixed(2);
+          uploadSamples.push({ t: Number(totalDownSec.toFixed(1)), v: Number(finalUp.toFixed(2)) });
+          drawThroughputCurves();
+          drawQoERadar(1.0);
+        } else {
+          drawThroughputCurves();
+
+          // ─── PHASE 3: REAL UPLOAD TEST (with Loaded Latency) ───
+          if (dispUp) dispUp.textContent = '0.00';
+          uploadSamples = [{ t: 0, v: 0 }];
+          const upStartTime = performance.now();
+          let totalUploadedBytes = 0;
+          const upAbort = new AbortController();
+
+          let pingUpRunning = true;
+          (async function probeUpLoadedPing() {
+            const pings = [];
+            while (pingUpRunning && performance.now() - upStartTime < upDurationMs) {
+              await new Promise(r => setTimeout(r, 600));
+              if (!pingUpRunning) break;
+              const pt0 = performance.now();
+              try {
+                await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now(), { cache: 'no-store', signal: upAbort.signal });
+                pings.push(performance.now() - pt0);
+                const curP = Math.max(1, Math.round(pings[pings.length - 1]));
+                if (dispUpPing) dispUpPing.textContent = curP;
+              } catch(e) {}
+            }
+            if (pings.length > 0) {
+              pings.sort((a, b) => a - b);
+              loadedPingUp = Math.round(pings[Math.floor(pings.length / 2)]);
+              if (dispUpPing) dispUpPing.textContent = loadedPingUp;
+            } else {
+              loadedPingUp = Math.round(measuredPing * 1.5);
+              if (dispUpPing) dispUpPing.textContent = loadedPingUp;
+            }
+          })();
+
+          let upWarmupBytes = 0;
+          let upWarmupTime = 0;
+          let upWarmupPassed = false;
+          const UP_WARMUP_DURATION = 1.2;
+
+          const upSampler = setInterval(() => {
+            const nowT = performance.now();
+            const elapsedSec = (nowT - upStartTime) / 1000;
+
+            if (elapsedSec >= UP_WARMUP_DURATION) {
+              if (!upWarmupPassed) {
+                upWarmupPassed = true;
+                upWarmupBytes = totalUploadedBytes;
+                upWarmupTime = nowT;
+              }
+              const sustainedUpBytes = totalUploadedBytes - upWarmupBytes;
+              const sustainedUpSec = (nowT - upWarmupTime) / 1000;
+              if (sustainedUpSec > 0.1) {
+                const currentUpMbps = (sustainedUpBytes * 8) / (sustainedUpSec * 1000000);
+                if (dispUp) dispUp.textContent = currentUpMbps.toFixed(2);
+                uploadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(currentUpMbps.toFixed(2)) });
+                drawThroughputCurves();
+                drawQoERadar(0.65 + 0.35 * Math.min(1, elapsedSec / (upDurationMs / 1000)));
+                playSpeedTone(420 + Math.min(750, currentUpMbps * 10), 40, 'triangle');
+              }
+            }
+          }, 100);
+
+          async function runUploadStream(streamId) {
+            while (performance.now() - upStartTime < upDurationMs && !upAbort.signal.aborted) {
+              const ok = await runUploadChunkXhr(upStartTime, upDurationMs, upAbort, (d) => { totalUploadedBytes += d; });
+              if (!ok || performance.now() - upStartTime >= upDurationMs) {
+                upAbort.abort();
                 break;
               }
             }
-          } catch(e) {
-            break;
           }
-        }
-      }
 
-      // Launch 3 parallel streams for steady Gigabit / Broadband throughput
-      try {
-        await Promise.all([runDownloadStream(1), runDownloadStream(2), runDownloadStream(3)]);
-      } catch(e) {}
-      clearInterval(downSampler);
-      pingDownRunning = false;
-
-      // RFC 6349 final sustained throughput (integrates over sustained window, falls back cleanly on ultra-slow cellular links)
-      const totalDownSec = (performance.now() - downStartTime) / 1000;
-      const finalDownSec = (performance.now() - (downWarmupPassed ? downWarmupTime : downStartTime)) / 1000;
-      const finalDownBytes = totalDownloadedBytes - (downWarmupPassed ? downWarmupBytes : 0);
-      if (downWarmupPassed && finalDownSec > 0.2 && finalDownBytes > 0) {
-        finalDown = (finalDownBytes * 8) / (finalDownSec * 1000000);
-      } else {
-        finalDown = totalDownSec > 0.2 ? (totalDownloadedBytes * 8) / (totalDownSec * 1000000) : 0.05;
-      }
-      if (finalDown < 0.05) finalDown = 0.05;
-      if (dispDown) dispDown.textContent = finalDown.toFixed(2);
-      downloadSamples.push({ t: Number(((performance.now() - downStartTime) / 1000).toFixed(1)), v: Number(finalDown.toFixed(2)) });
-      drawThroughputCurves();
-
-      // ─── PHASE 3: REAL MULTI-STREAM UPLOAD TEST (with Loaded Latency) ───
-      let finalUp = 0;
-      let loadedPingUp = measuredPing;
-      if (dispUp) dispUp.textContent = '0.00';
-      uploadSamples = [{ t: 0, v: 0 }];
-      const upStartTime = performance.now();
-      // upDurationMs determined by active test profile (3s, 5s, or 10s)
-      let totalUploadedBytes = 0;
-      let lastUpSampleTime = 0;
-      const upAbort = new AbortController();
-
-      // Background loaded ping probe during upload
-      let pingUpRunning = true;
-      (async function probeUpLoadedPing() {
-        const pings = [];
-        while (pingUpRunning && performance.now() - upStartTime < upDurationMs) {
-          await new Promise(r => setTimeout(r, 600));
-          if (!pingUpRunning) break;
-          const pt0 = performance.now();
           try {
-            await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now(), { cache: 'no-store', signal: upAbort.signal });
-            pings.push(performance.now() - pt0);
-            const curP = Math.max(1, Math.round(pings[pings.length - 1]));
-            if (dispUpPing) dispUpPing.textContent = curP;
+            if (connMode === 'single') {
+              await runUploadStream(1);
+            } else {
+              await Promise.all([runUploadStream(1), runUploadStream(2)]);
+            }
           } catch(e) {}
-        }
-        if (pings.length > 0) {
-          pings.sort((a, b) => a - b);
-          loadedPingUp = Math.round(pings[Math.floor(pings.length / 2)]);
-          if (dispUpPing) dispUpPing.textContent = loadedPingUp;
-        } else {
-          loadedPingUp = Math.round(measuredPing * 1.5);
-          if (dispUpPing) dispUpPing.textContent = loadedPingUp;
-        }
-      })();
+          clearInterval(upSampler);
+          pingUpRunning = false;
 
-      // 1MB payload chunk for upload
-      // Centralized, collision-free upload measurement engine
-      let upWarmupBytes = 0;
-      let upWarmupTime = 0;
-      let upWarmupPassed = false;
-      const UP_WARMUP_DURATION = 1.2;
-
-      const upSampler = setInterval(() => {
-        const nowT = performance.now();
-        const elapsedSec = (nowT - upStartTime) / 1000;
-
-        if (elapsedSec >= UP_WARMUP_DURATION) {
-          if (!upWarmupPassed) {
-            upWarmupPassed = true;
-            upWarmupBytes = totalUploadedBytes;
-            upWarmupTime = nowT;
-          }
-          const sustainedUpBytes = totalUploadedBytes - upWarmupBytes;
-          const sustainedUpSec = (nowT - upWarmupTime) / 1000;
-          if (sustainedUpSec > 0.1) {
-            const currentUpMbps = (sustainedUpBytes * 8) / (sustainedUpSec * 1000000);
-            if (dispUp) dispUp.textContent = currentUpMbps.toFixed(2);
-            uploadSamples.push({ t: Number(elapsedSec.toFixed(1)), v: Number(currentUpMbps.toFixed(2)) });
-            drawThroughputCurves();
-            drawQoERadar(0.65 + 0.35 * Math.min(1, elapsedSec / (upDurationMs / 1000)));
-            playSpeedTone(420 + Math.min(750, currentUpMbps * 10), 40, 'triangle');
-          }
-        }
-      }, 100);
-
-      // Adaptive XHR real-time progress upload chunks (accurate down to <0.1 Mbps cellular as well as Gigabit)
-      const upChunkSize = 262144; // 256KB payload chunk streamed via xhr.upload.onprogress
-      const upBlob = new Blob([new Uint8Array(upChunkSize)]);
-
-      function runUploadChunkXhr() {
-        return new Promise((resolve) => {
-          if (performance.now() - upStartTime >= upDurationMs || upAbort.signal.aborted) {
-            resolve(false);
-            return;
-          }
-          const xhr = new XMLHttpRequest();
-          let lastLoaded = 0;
-          const onAbort = () => { try { xhr.abort(); } catch(e) {} };
-          upAbort.signal.addEventListener('abort', onAbort, { once: true });
-
-          xhr.upload.onprogress = (ev) => {
-            const delta = Math.max(0, ev.loaded - lastLoaded);
-            lastLoaded = ev.loaded;
-            totalUploadedBytes += delta;
-            if (performance.now() - upStartTime >= upDurationMs) {
-              upAbort.abort();
-            }
-          };
-          xhr.onload = () => {
-            if (lastLoaded < upChunkSize) {
-              totalUploadedBytes += (upChunkSize - lastLoaded);
-            }
-            upAbort.signal.removeEventListener('abort', onAbort);
-            resolve(true);
-          };
-          xhr.onerror = xhr.onabort = () => {
-            upAbort.signal.removeEventListener('abort', onAbort);
-            resolve(false);
-          };
-          xhr.open('POST', 'https://speed.cloudflare.com/__up?t=' + Date.now() + '_' + Math.random(), true);
-          xhr.send(upBlob);
-        });
-      }
-
-      async function runUploadStream(streamId) {
-        while (performance.now() - upStartTime < upDurationMs && !upAbort.signal.aborted) {
-          const ok = await runUploadChunkXhr();
-          if (!ok || performance.now() - upStartTime >= upDurationMs) {
-            upAbort.abort();
-            break;
-          }
+          const totalUpSec = (performance.now() - upStartTime) / 1000;
+          const finalUpSec = (performance.now() - (upWarmupPassed ? upWarmupTime : upStartTime)) / 1000;
+          finalUp = computeSustainedMbps(totalUploadedBytes, upWarmupBytes, totalUpSec, finalUpSec, upWarmupPassed);
+          if (dispUp) dispUp.textContent = finalUp.toFixed(2);
+          uploadSamples.push({ t: Number(totalUpSec.toFixed(1)), v: Number(finalUp.toFixed(2)) });
+          drawThroughputCurves();
+          drawQoERadar(1.0);
         }
       }
-
-      try {
-        await Promise.all([runUploadStream(1), runUploadStream(2)]);
-      } catch(e) {}
-      clearInterval(upSampler);
-      pingUpRunning = false;
-
-      // RFC 6349 final sustained upload throughput (accurate without artificial 0.5 Mbps clamp)
-      const totalUpSec = (performance.now() - upStartTime) / 1000;
-      const finalUpSec = (performance.now() - (upWarmupPassed ? upWarmupTime : upStartTime)) / 1000;
-      const finalUpBytes = totalUploadedBytes - (upWarmupPassed ? upWarmupBytes : 0);
-      if (upWarmupPassed && finalUpSec > 0.2 && finalUpBytes > 0) {
-        finalUp = (finalUpBytes * 8) / (finalUpSec * 1000000);
-      } else {
-        finalUp = totalUpSec > 0.2 ? (totalUploadedBytes * 8) / (totalUpSec * 1000000) : 0.05;
-      }
-      if (finalUp < 0.05) finalUp = 0.05;
-      if (dispUp) dispUp.textContent = finalUp.toFixed(2);
-      uploadSamples.push({ t: Number(((performance.now() - upStartTime) / 1000).toFixed(1)), v: Number(finalUp.toFixed(2)) });
-      drawThroughputCurves();
-      drawQoERadar(1.0);
 
       // ─── PHASE 4: FINALIZE, SAVE REAL TEST REPORT & NOTIFY ───
       isTesting = false;
@@ -8027,7 +8869,546 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         renderInlineHistoryTable();
       } catch (e) {}
     }
-  
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // PRO DIAGNOSTICS LAB: VIDEO BUFFER, WEB LOAD, GLOBAL RADAR, 24H SOAK & CLI
+    // ═══════════════════════════════════════════════════════════════════════
+    function switchProLabTab(tabName) {
+      document.querySelectorAll('.pro-lab-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.protab === tabName);
+      });
+      document.querySelectorAll('.pro-lab-pane').forEach(pane => {
+        pane.classList.toggle('active', pane.id === 'pro-pane-' + tabName);
+      });
+      if (tabName === 'soak') renderSoakUI();
+      if (tabName === 'cli') {
+        const pre = document.getElementById('bm97-cli-preview');
+        if (pre) pre.textContent = buildBm97CliSource();
+      }
+    }
+
+    let videoStressAbort = null;
+    let videoStressRunning = false;
+
+    function stopVideoStressTest() {
+      videoStressRunning = false;
+      if (videoStressAbort) {
+        try { videoStressAbort.abort(); } catch (e) {}
+      }
+      const bRun = document.getElementById('btn-run-video-test');
+      const bStop = document.getElementById('btn-stop-video-test');
+      if (bRun) bRun.disabled = false;
+      if (bStop) bStop.style.display = 'none';
+    }
+
+    function drawVideoBufferCanvas(points) {
+      const cvs = document.getElementById('video-buffer-canvas');
+      if (!cvs) return;
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.max(260, cvs.clientWidth || 380);
+      const h = 96;
+      cvs.width = w * dpr;
+      cvs.height = h * dpr;
+      const c = cvs.getContext('2d');
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.clearRect(0, 0, w, h);
+
+      if (!points || !points.length) return;
+      const maxMbps = Math.max(22, ...points.map(p => p.mbps)) * 1.1;
+      const barW = Math.max(12, Math.floor((w - 28) / 8) - 6);
+
+      points.forEach((p, idx) => {
+        const x = 14 + idx * ((w - 28) / 8);
+        const bh = Math.max(4, (p.mbps / maxMbps) * (h - 22));
+        c.fillStyle = p.stalled ? 'rgba(244, 63, 94, 0.75)' : 'rgba(0, 210, 255, 0.65)';
+        c.fillRect(x, h - 10 - bh, barW, bh);
+
+        c.fillStyle = 'rgba(248, 250, 252, 0.85)';
+        c.font = '600 10px monospace';
+        c.fillText(p.tierShort, x, h - 1);
+      });
+
+      // Buffer health polyline (green)
+      c.beginPath();
+      points.forEach((p, idx) => {
+        const x = 14 + idx * ((w - 28) / 8) + barW / 2;
+        const y = (h - 14) - (Math.min(6, p.buf) / 6) * (h - 26);
+        if (idx === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      });
+      c.strokeStyle = '#10b981';
+      c.lineWidth = 2;
+      c.stroke();
+    }
+
+    async function runAdaptiveVideoStressTest() {
+      if (videoStressRunning) return;
+      videoStressRunning = true;
+      videoStressAbort = new AbortController();
+
+      const bRun = document.getElementById('btn-run-video-test');
+      const bStop = document.getElementById('btn-stop-video-test');
+      const badge = document.getElementById('video-tier-badge');
+      const resEl = document.getElementById('vid-res-val');
+      const ttffEl = document.getElementById('vid-ttff-val');
+      const stallEl = document.getElementById('vid-stall-val');
+      const kbpsEl = document.getElementById('vid-kbps-val');
+      if (bRun) bRun.disabled = true;
+      if (bStop) bStop.style.display = 'inline-block';
+      if (badge) { badge.textContent = 'Streaming 8 Chunks...'; badge.style.color = 'var(--cyan)'; }
+
+      const tiers = [
+        { name: '360p SD', short: '360p', mbps: 1.0, bytes: 125000 },
+        { name: '720p HD', short: '720p', mbps: 3.0, bytes: 375000 },
+        { name: '1080p FHD', short: '1080p', mbps: 6.4, bytes: 800000 },
+        { name: '4K UHD', short: '4K', mbps: 20.0, bytes: 2500000 }
+      ];
+
+      let tierIdx = 0;
+      let bufferSec = 0;
+      let stalls = 0;
+      let ttffMs = 0;
+      let mbpsSum = 0;
+      const points = [];
+      const testStart = performance.now();
+
+      try {
+        for (let seg = 0; seg < 8 && videoStressRunning; seg++) {
+          const tObj = tiers[tierIdx];
+          const s0 = performance.now();
+          const res = await fetch('https://speed.cloudflare.com/__down?bytes=' + tObj.bytes + '&seg=' + seg + '&t=' + Date.now(), {
+            cache: 'no-store',
+            signal: videoStressAbort.signal
+          });
+          await res.arrayBuffer();
+          const dlSec = Math.max(0.02, (performance.now() - s0) / 1000);
+          const actualMbps = (tObj.bytes * 8) / (dlSec * 1000000);
+          mbpsSum += actualMbps;
+
+          let stalled = false;
+          if (seg === 0) {
+            ttffMs = Math.round(performance.now() - testStart);
+            bufferSec = 1.0;
+          } else if (dlSec > bufferSec) {
+            stalls++;
+            stalled = true;
+            bufferSec = 1.0;
+          } else {
+            bufferSec = Math.min(6.0, bufferSec - dlSec + 1.0);
+          }
+
+          points.push({ tierShort: tObj.short, mbps: actualMbps, buf: bufferSec, stalled });
+          drawVideoBufferCanvas(points);
+
+          if (resEl) resEl.textContent = tObj.short;
+          if (ttffEl) ttffEl.textContent = ttffMs + 'ms';
+          if (stallEl) stallEl.textContent = String(stalls);
+          if (kbpsEl) kbpsEl.textContent = (mbpsSum / points.length).toFixed(1) + 'M';
+
+          if (!stalled && dlSec < 0.72 && tierIdx < tiers.length - 1) tierIdx++;
+          else if ((stalled || dlSec > 1.05) && tierIdx > 0) tierIdx--;
+        }
+        if (badge) {
+          const smoothTier = points.length ? points[points.length - 1].tierShort : '--';
+          badge.textContent = stalls === 0 ? ('✓ Smooth ' + smoothTier + ' (' + points.length + ' segs)') : (smoothTier + ' · ' + stalls + ' Stall(s)');
+          badge.style.color = stalls === 0 ? 'var(--emerald)' : 'var(--amber)';
+        }
+      } catch (e) {
+        if (badge) {
+          badge.textContent = videoStressRunning ? 'Network Timeout' : 'Stopped';
+          badge.style.color = 'var(--amber)';
+        }
+      } finally {
+        stopVideoStressTest();
+      }
+    }
+
+    async function runColdWebLoadTest() {
+      const btn = document.getElementById('btn-run-web-test');
+      const badge = document.getElementById('web-grade-badge');
+      const totEl = document.getElementById('web-total-val');
+      const ttfbEl = document.getElementById('web-ttfb-val');
+      const logEl = document.getElementById('web-waterfall-log');
+      if (btn) btn.disabled = true;
+      if (badge) { badge.textContent = 'Fetching Assets...'; badge.style.color = 'var(--cyan)'; }
+
+      const assets = [
+        { name: 'document.html', bytes: 15000 },
+        { name: 'styles.css', bytes: 48000 },
+        { name: 'app.bundle.js', bytes: 160000 },
+        { name: 'hero-banner.webp', bytes: 320000 }
+      ];
+      const tStart = performance.now();
+      let firstTtfb = 0;
+      const lines = [];
+
+      try {
+        for (let i = 0; i < assets.length; i++) {
+          const a = assets[i];
+          const s0 = performance.now();
+          const res = await fetch('https://speed.cloudflare.com/__down?bytes=' + a.bytes + '&asset=' + a.name + '&t=' + Date.now(), { cache: 'no-store' });
+          const headerMs = Math.round(performance.now() - s0);
+          if (i === 0) firstTtfb = headerMs;
+          await res.arrayBuffer();
+          const assetMs = Math.round(performance.now() - s0);
+          lines.push(`[${i + 1}/4] ${a.name.padEnd(17, ' ')} ${(a.bytes / 1024).toFixed(0).padStart(3, ' ')} KB -> ${assetMs} ms`);
+        }
+        const totalMs = Math.round(performance.now() - tStart);
+        if (totEl) totEl.textContent = totalMs + 'ms';
+        if (ttfbEl) ttfbEl.textContent = firstTtfb + 'ms';
+        if (logEl) logEl.textContent = lines.join('\n');
+        if (badge) {
+          badge.textContent = totalMs <= 1200 ? '⚡ Instant (<1.2s)' : (totalMs <= 2500 ? '✓ Good Load' : '⚠ Heavy Lag');
+          badge.style.color = totalMs <= 1200 ? 'var(--emerald)' : (totalMs <= 2500 ? 'var(--cyan)' : 'var(--amber)');
+        }
+      } catch (e) {
+        if (logEl) logEl.textContent = 'Asset fetch aborted or blocked offline.';
+        if (badge) { badge.textContent = 'Error'; badge.style.color = 'var(--rose)'; }
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    const GLOBAL_PING_REGIONS = [
+      { id: 'IN', mlab: 'IN', name: 'Mumbai (ap-south-1)', url: 'https://dynamodb.ap-south-1.amazonaws.com/ping', use: 'Local India / UPI / OTT' },
+      { id: 'SG', mlab: 'SG', name: 'Singapore (ap-southeast-1)', url: 'https://dynamodb.ap-southeast-1.amazonaws.com/ping', use: 'SE Asia Gaming / APAC' },
+      { id: 'JP', mlab: 'JP', name: 'Tokyo (ap-northeast-1)', url: 'https://dynamodb.ap-northeast-1.amazonaws.com/ping', use: 'East Asia / Trading' },
+      { id: 'DE', mlab: 'DE', name: 'Frankfurt (eu-central-1)', url: 'https://dynamodb.eu-central-1.amazonaws.com/ping', use: 'EU SaaS / Remote Dev' },
+      { id: 'GB', mlab: 'GB', name: 'London (eu-west-2)', url: 'https://dynamodb.eu-west-2.amazonaws.com/ping', use: 'UK / Transatlantic' },
+      { id: 'US', mlab: 'US', name: 'Virginia (us-east-1)', url: 'https://dynamodb.us-east-1.amazonaws.com/ping', use: 'US Cloud / AI APIs' }
+    ];
+
+    async function runGlobalRegionPingRadar() {
+      const btn = document.getElementById('btn-run-radar');
+      const tbody = document.getElementById('radar-region-tbody');
+      if (!tbody) return;
+      if (btn) btn.disabled = true;
+
+      const results = GLOBAL_PING_REGIONS.map(r => ({ ...r, median: null, jitter: null, status: 'Pinging...' }));
+      const renderRows = () => {
+        const maxMs = Math.max(150, ...results.map(x => x.median || 0));
+        tbody.innerHTML = results.map(r => {
+          const pct = r.median ? Math.min(100, Math.round((r.median / maxMs) * 100)) : 8;
+          const color = !r.median ? 'var(--text-dim)' : (r.median <= 80 ? '#10b981' : (r.median <= 180 ? '#00d2ff' : (r.median <= 280 ? '#f59e0b' : '#f43f5e')));
+          const verdict = !r.median ? r.status : (r.median <= 60 ? '⚡ Ultra Low (Competitive)' : (r.median <= 150 ? '✓ Smooth Calls & SSH' : (r.median <= 260 ? '△ Moderate Distance' : '⚠ High Cross-Ocean RTT')));
+          return `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+              <td style="padding: 8px 6px; font-weight: 700;">${r.name}<div style="font-size: 10.5px; font-weight: 400; color: var(--text-muted);">${r.use}</div></td>
+              <td style="padding: 8px 6px; font-family: var(--font-mono); font-weight: 800; color: ${color};">${r.median ? (r.median + ' ms') : '...'}</td>
+              <td style="padding: 8px 6px; font-family: var(--font-mono); color: var(--text-muted);">${r.jitter !== null ? (r.jitter.toFixed(1) + ' ms') : '--'}</td>
+              <td style="padding: 8px 6px;"><div class="region-bar-track"><div class="region-bar-fill" style="width: ${pct}%; background: ${color};"></div></div></td>
+              <td style="padding: 8px 6px; font-size: 11.5px; color: ${color};">${verdict}</td>
+              <td style="padding: 8px 6px; text-align: right;"><button type="button" class="pro-btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="quickRunUnicastRegion('${r.mlab}')">Test Speed</button></td>
+            </tr>
+          `;
+        }).join('');
+      };
+      renderRows();
+
+      await Promise.all(results.map(async (r) => {
+        const samples = [];
+        for (let pass = 0; pass < 4; pass++) {
+          const ac = new AbortController();
+          const tmr = setTimeout(() => ac.abort(), 3000);
+          const t0 = performance.now();
+          try {
+            await fetch(r.url + '?bm=' + Date.now() + '_' + pass, { mode: 'no-cors', cache: 'no-store', signal: ac.signal });
+            clearTimeout(tmr);
+            const rtt = Math.max(1, Math.round(performance.now() - t0));
+            if (pass > 0) samples.push(rtt); // discard cold TLS handshake on pass 0
+          } catch (e) {
+            clearTimeout(tmr);
+          }
+        }
+        if (samples.length) {
+          const sorted = [...samples].sort((a, b) => a - b);
+          r.median = sorted[Math.floor(sorted.length / 2)];
+          r.jitter = samples.length >= 2 ? (Math.abs(samples[1] - samples[0]) + (samples[2] !== undefined ? Math.abs(samples[2] - samples[1]) : 0)) / (samples.length - 1) : 0;
+        } else {
+          r.status = 'Timed Out';
+        }
+        renderRows();
+      }));
+
+      if (btn) btn.disabled = false;
+    }
+
+    function quickRunUnicastRegion(countryCode) {
+      selectServerMode('mlab', countryCode);
+      const cockpit = document.getElementById('main-cockpit-card');
+      if (cockpit) cockpit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => startSpeedTest(), 350);
+    }
+
+    let soakTimer = null;
+    function getSoakLogs() {
+      try { return JSON.parse(localStorage.getItem('bm97_soak_logs') || '[]'); } catch (e) { return []; }
+    }
+    function saveSoakLogs(arr) {
+      try {
+        if (arr.length > 500) arr = arr.slice(0, 500);
+        localStorage.setItem('bm97_soak_logs', JSON.stringify(arr));
+      } catch (e) {}
+    }
+
+    function renderSoakUI() {
+      const logs = getSoakLogs();
+      const cntEl = document.getElementById('soak-count-val');
+      const avgEl = document.getElementById('soak-avg-val');
+      const spkEl = document.getElementById('soak-spike-val');
+      const logBox = document.getElementById('soak-recent-log');
+      const cvs = document.getElementById('soak-trend-canvas');
+
+      if (cntEl) cntEl.textContent = String(logs.length);
+      if (logs.length > 0) {
+        const pings = logs.map(l => l.ping).filter(x => x > 0);
+        const avg = pings.length ? Math.round(pings.reduce((a, b) => a + b, 0) / pings.length) : 0;
+        const spikes = logs.filter(l => l.ping > 100 || l.loss > 0).length;
+        if (avgEl) avgEl.textContent = avg + 'ms';
+        if (spkEl) {
+          spkEl.textContent = String(spikes);
+          spkEl.style.color = spikes > 0 ? 'var(--rose)' : 'var(--emerald)';
+        }
+        if (logBox) {
+          logBox.textContent = logs.slice(0, 12).map(l =>
+            `${l.local} | Ping ${l.ping}ms | Loss ${l.loss}%${l.downMbps !== null ? (' | Down ' + l.downMbps + ' Mbps') : ''} | ${l.flag}`
+          ).join('\n');
+        }
+      } else {
+        if (avgEl) avgEl.textContent = '--';
+        if (spkEl) { spkEl.textContent = '0'; spkEl.style.color = 'var(--emerald)'; }
+        if (logBox) logBox.textContent = 'No soak samples recorded yet. Click "Start Monitor" or "Sample Now".';
+      }
+
+      if (cvs) {
+        const dpr = window.devicePixelRatio || 1;
+        const w = Math.max(280, cvs.clientWidth || 640);
+        const h = 110;
+        cvs.width = w * dpr;
+        cvs.height = h * dpr;
+        const c = cvs.getContext('2d');
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.clearRect(0, 0, w, h);
+        if (logs.length >= 2) {
+          const pts = [...logs].slice(0, 60).reverse();
+          const maxP = Math.max(120, ...pts.map(p => p.ping)) * 1.1;
+          c.strokeStyle = 'rgba(244, 63, 94, 0.35)';
+          c.setLineDash([4, 4]);
+          const slaY = (h - 12) - (100 / maxP) * (h - 24);
+          c.beginPath(); c.moveTo(0, slaY); c.lineTo(w, slaY); c.stroke();
+          c.setLineDash([]);
+
+          c.beginPath();
+          pts.forEach((p, idx) => {
+            const x = 10 + (idx / Math.max(1, pts.length - 1)) * (w - 20);
+            const y = (h - 12) - (p.ping / maxP) * (h - 24);
+            if (idx === 0) c.moveTo(x, y); else c.lineTo(x, y);
+          });
+          c.strokeStyle = '#f59e0b';
+          c.lineWidth = 2;
+          c.stroke();
+        }
+      }
+    }
+
+    async function runSingleSoakSample() {
+      const mode = document.getElementById('soak-probe-select')?.value || 'ping';
+      const stEl = document.getElementById('soak-status-val');
+      if (stEl) stEl.textContent = 'Sampling...';
+
+      let okPings = [];
+      let drops = 0;
+      for (let i = 0; i < 4; i++) {
+        const ac = new AbortController();
+        const tmr = setTimeout(() => ac.abort(), 1800);
+        const t0 = performance.now();
+        try {
+          await fetch('https://speed.cloudflare.com/__down?bytes=0&soak=' + Date.now() + '_' + i, { cache: 'no-store', signal: ac.signal });
+          clearTimeout(tmr);
+          okPings.push(Math.max(1, Math.round(performance.now() - t0)));
+        } catch (e) {
+          clearTimeout(tmr);
+          drops++;
+        }
+      }
+      const medPing = okPings.length ? [...okPings].sort((a, b) => a - b)[Math.floor(okPings.length / 2)] : 999;
+      const lossPct = Math.round((drops / 4) * 100);
+
+      let downMbps = null;
+      if (mode === 'micro') {
+        const m0 = performance.now();
+        try {
+          const r = await fetch('https://speed.cloudflare.com/__down?bytes=1000000&soak=' + Date.now(), { cache: 'no-store' });
+          await r.arrayBuffer();
+          const sec = Math.max(0.05, (performance.now() - m0) / 1000);
+          downMbps = Number(((1000000 * 8) / (sec * 1000000)).toFixed(2));
+        } catch (e) { downMbps = 0; }
+      }
+
+      const d = new Date();
+      const flag = lossPct > 0 ? 'DROP_DETECTED' : (medPing > 100 ? 'LATENCY_SPIKE' : 'SLA_OK');
+      const logs = getSoakLogs();
+      logs.unshift({
+        utc: d.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+        local: d.toLocaleTimeString(),
+        ping: medPing,
+        loss: lossPct,
+        downMbps,
+        isp: formatCleanIspName(clientNetwork.isp || 'Unknown'),
+        flag
+      });
+      saveSoakLogs(logs);
+      if (stEl) stEl.textContent = soakTimer ? 'Active Loop' : 'Sample Saved';
+      renderSoakUI();
+    }
+
+    function toggleSoakMonitor() {
+      const btn = document.getElementById('btn-soak-toggle');
+      const stEl = document.getElementById('soak-status-val');
+      if (soakTimer) {
+        clearInterval(soakTimer);
+        soakTimer = null;
+        if (btn) btn.textContent = '▶ Start Monitor';
+        if (stEl) stEl.textContent = 'Paused';
+        return;
+      }
+      const sec = Math.max(60, parseInt(document.getElementById('soak-interval-select')?.value || '300', 10));
+      if (btn) btn.textContent = '⏹ Stop Monitor';
+      if (stEl) stEl.textContent = 'Active Loop';
+      runSingleSoakSample();
+      soakTimer = setInterval(runSingleSoakSample, sec * 1000);
+    }
+
+    function exportSoakCsv() {
+      const logs = getSoakLogs();
+      if (!logs.length) {
+        alert('No continuous monitor logs yet. Click "Sample Now" or "Start Monitor" first.');
+        return;
+      }
+      const header = ['UTC Timestamp', 'Local Time', 'Median Ping (ms)', 'Packet Loss (%)', 'Micro Down (Mbps)', 'ISP', 'SLA Status'];
+      const lines = [header.join(',')];
+      logs.forEach(l => {
+        lines.push(`"${l.utc}","${l.local}","${l.ping}","${l.loss}","${l.downMbps !== null ? l.downMbps : 'N/A'}","${String(l.isp || '').replace(/"/g, '""')}","${l.flag}"`);
+      });
+      const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'BillMaster97_24h_ISP_SLA_Log_' + Date.now() + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch (e) {} }, 1500);
+    }
+
+    function clearSoakLogs() {
+      if (confirm('Clear continuous monitor SLA logs?')) {
+        localStorage.removeItem('bm97_soak_logs');
+        renderSoakUI();
+      }
+    }
+
+    function buildBm97CliSource() {
+      return [
+        '#!/usr/bin/env node',
+        '// BillMaster97 Native 10G+ CLI Speedtest (Zero Dependencies - Node 18+/24+)',
+        '// Usage: node bm97-cli.mjs [--multi | --single | --duplex]',
+        'import { createHash } from "node:crypto";',
+        'const args = new Set(process.argv.slice(2));',
+        'const mode = args.has("--single") ? "single" : (args.has("--duplex") ? "duplex" : "multi");',
+        'const downStreams = mode === "single" ? 1 : (mode === "duplex" ? 4 : 8);',
+        'const upStreams = mode === "single" ? 1 : (mode === "duplex" ? 2 : 4);',
+        '',
+        'async function main() {',
+        '  console.log("\\n[BillMaster97 CLI v2.4] Mode: " + mode.toUpperCase() + " (" + downStreams + " down / " + upStreams + " up)");',
+        '  let meta = { clientIp: "0.0.0.0", asOrganization: "Native CLI", asn: "0", city: "CLI", country: "", latitude: "0", longitude: "0", colo: "EDGE" };',
+        '  try {',
+        '    const mRes = await fetch("https://speed.cloudflare.com/meta", { headers: { Origin: "https://speed.cloudflare.com", Referer: "https://speed.cloudflare.com/" } });',
+        '    if (mRes.ok) meta = await mRes.json();',
+        '  } catch {}',
+        '  const pings = [];',
+        '  for (let i = 0; i < 8; i++) {',
+        '    const t0 = performance.now();',
+        '    await fetch("https://speed.cloudflare.com/__down?bytes=0&t=" + Date.now() + "_" + i);',
+        '    pings.push(Math.max(1, Math.round(performance.now() - t0)));',
+        '  }',
+        '  const ping = [...pings].sort((a, b) => a - b)[Math.floor(pings.length / 2)] || 20;',
+        '  let ipdv = 0; for (let i = 1; i < pings.length; i++) ipdv += Math.abs(pings[i] - pings[i - 1]);',
+        '  const jitter = (pings.length > 1 ? ipdv / (pings.length - 1) : 1.0).toFixed(2) + "ms";',
+        '',
+        '  const runDownPhase = async () => {',
+        '    const dlStart = performance.now(), dlDur = 6000, dlAc = new AbortController();',
+        '    let dlBytes = 0, loadedList = [];',
+        '    const pinger = (async () => { while (performance.now() - dlStart < dlDur) { await new Promise(r => setTimeout(r, 600)); try { const t = performance.now(); await fetch("https://speed.cloudflare.com/__down?bytes=0&t=" + Date.now(), { signal: dlAc.signal }); loadedList.push(Math.round(performance.now() - t)); } catch {} } })();',
+        '    await Promise.all([pinger, ...Array.from({ length: downStreams }, (_, idx) => (async () => {',
+        '      while (performance.now() - dlStart < dlDur) {',
+        '        try { const r = await fetch("https://speed.cloudflare.com/__down?bytes=25000000&s=" + idx + "&t=" + Date.now(), { signal: dlAc.signal });',
+        '          for await (const ch of r.body) { dlBytes += ch.byteLength; if (performance.now() - dlStart >= dlDur) { dlAc.abort(); break; } } } catch { break; }',
+        '      }',
+        '    })())]);',
+        '    return { mbps: ((dlBytes * 8) / (Math.max(0.2, (performance.now() - dlStart) / 1000) * 1e6)).toFixed(2), loaded: loadedList };',
+        '  };',
+        '',
+        '  const runUpPhase = async () => {',
+        '    const ulStart = performance.now(), ulDur = 5000, ulAc = new AbortController(), payload = new Uint8Array(262144);',
+        '    let ulBytes = 0, loadedList = [];',
+        '    const pinger = (async () => { while (performance.now() - ulStart < ulDur) { await new Promise(r => setTimeout(r, 600)); try { const t = performance.now(); await fetch("https://speed.cloudflare.com/__down?bytes=0&t=" + Date.now(), { signal: ulAc.signal }); loadedList.push(Math.round(performance.now() - t)); } catch {} } })();',
+        '    await Promise.all([pinger, ...Array.from({ length: upStreams }, (_, idx) => (async () => {',
+        '      while (performance.now() - ulStart < ulDur) {',
+        '        try { await fetch("https://speed.cloudflare.com/__up?s=" + idx + "&t=" + Date.now(), { method: "POST", body: payload, signal: ulAc.signal }); ulBytes += payload.byteLength; } catch { break; }',
+        '      }',
+        '    })())]);',
+        '    return { mbps: ((ulBytes * 8) / (Math.max(0.2, (performance.now() - ulStart) / 1000) * 1e6)).toFixed(2), loaded: loadedList };',
+        '  };',
+        '',
+        '  let dRes, uRes;',
+        '  if (mode === "duplex") { [dRes, uRes] = await Promise.all([runDownPhase(), runUpPhase()]); }',
+        '  else { dRes = await runDownPhase(); uRes = await runUpPhase(); }',
+        '',
+        '  const med = (arr, fb) => String(arr.length ? [...arr].sort((a, b) => a - b)[Math.floor(arr.length / 2)] : fb);',
+        '  const loadedDown = med(dRes.loaded, ping), loadedUp = med(uRes.loaded, ping);',
+        '  const utc = new Date().toISOString().replace(/\\.\\d{3}Z$/, "Z");',
+        '  const id = "BM97-CLI-" + Date.now();',
+        '  const coloName = typeof meta.colo === "object" && meta.colo ? ([meta.colo.city, meta.colo.iata].filter(Boolean).join(" ") || meta.colo.iata || "EDGE") : String(meta.colo || "EDGE");',
+        '  const server = "Cloudflare Anycast Edge (" + coloName + ")";',
+        '  const ip = meta.clientIp || "0.0.0.0", loss = "0.0%";',
+        '  const canonical = ["BM97", id, utc, ip, dRes.mbps, uRes.mbps, String(ping), loadedDown, loadedUp, jitter, loss, server].join("|");',
+        '  const hash = createHash("sha256").update(canonical).digest("hex");',
+        '  const compact = { i: id, t: utc, p: ip, s: meta.asOrganization || "Native CLI", a: "AS" + String(meta.asn || "0").replace(/^AS/i, ""), n: [meta.city, meta.country].filter(Boolean).join(", ") || "Local", c: (meta.latitude || "0") + " N / " + (meta.longitude || "0") + " E", e: server, pr: "HTTP/2+ CLI", d: dRes.mbps, u: uRes.mbps, g: String(ping), ld: loadedDown, lu: loadedUp, j: jitter, l: loss, h: hash };',
+        '  const b64 = Buffer.from(JSON.stringify(compact), "utf8").toString("base64").replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/, "");',
+        '  console.log("ISP/POP:  " + compact.s + " (" + compact.a + ") · " + server);',
+        '  console.log("Download: " + dRes.mbps + " Mbps | Upload: " + uRes.mbps + " Mbps | Ping: " + ping + "ms | Jitter: " + jitter);',
+        '  console.log("SHA-256:  " + hash);',
+        '  console.log("Verify / Export PDF URL:\\nhttps://billmaster97.com/internet-speed-test/?verify=" + b64 + "\\n");',
+        '}',
+        'main();'
+      ].join('\n');
+    }
+
+    function copyBm97CliCode() {
+      const code = buildBm97CliSource();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code);
+        alert('bm97-cli.mjs copied to clipboard! Run with: node bm97-cli.mjs');
+      }
+    }
+
+    function downloadBm97CliFile() {
+      const code = buildBm97CliSource();
+      const blob = new Blob([code], { type: 'text/javascript;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bm97-cli.mjs';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { try { document.body.removeChild(a); URL.revokeObjectURL(url); } catch (e) {} }, 1500);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const cliPre = document.getElementById('bm97-cli-preview');
+      if (cliPre) cliPre.textContent = buildBm97CliSource();
+      renderSoakUI();
+    });
+
   </script>
 
   <!-- MODAL 1: RESULTS HISTORY (MATCHING OOKLA SPEEDTEST.NET RESULTS HISTORY) -->
@@ -8161,6 +9542,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           <div class="setting-pill-options">
             <button class="setting-pill-opt active" id="btn-conn-multi" onclick="setSetting('conn', 'multi')">Multi (Parallel)</button>
             <button class="setting-pill-opt" id="btn-conn-single" onclick="setSetting('conn', 'single')">Single Stream</button>
+            <button class="setting-pill-opt" id="btn-conn-duplex" onclick="setSetting('conn', 'duplex')">Full-Duplex (Bi-Di)</button>
           </div>
         </div>
 
@@ -8233,6 +9615,23 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     </div>
   </div>
 
+  <!-- MODAL 2B: TRUE UNICAST & ANYCAST SERVER PICKER -->
+  <div class="bm97-modal-overlay" id="modal-server-picker" onclick="handleModalOverlayClick(event, 'modal-server-picker')">
+    <div class="bm97-modal-card" style="max-width: 680px;">
+      <div class="bm97-modal-header">
+        <div class="bm97-modal-title">
+          <span style="color: var(--cyan);">🌍</span> Select Speedtest Engine &amp; Target Country
+        </div>
+        <button class="bm97-modal-close" onclick="closeServerPickerModal()" title="Close">&times;</button>
+      </div>
+      <div class="bm97-modal-body" style="gap: 10px;">
+        <div style="font-size: 12px; color: var(--text-muted); background: rgba(0, 210, 255, 0.06); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;">
+          Choose <strong style="color: var(--cyan);">Cloudflare Anycast</strong> for maximum local speed up to 2.5G, or pick an <strong style="color: var(--cyan);">M-Lab Unicast Country Hub</strong> to route packets across international cables and capture Linux kernel <code>TCPInfo</code> packet retransmissions.
+        </div>
+        <div id="server-picker-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL 3: OFFICIAL SOVEREIGN TELEMETRY SPEED REPORT PDF -->
   <div class="bm97-modal-overlay" id="modal-pdf-report" onclick="handleModalOverlayClick(event, 'modal-pdf-report')">
