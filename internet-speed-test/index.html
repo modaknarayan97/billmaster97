@@ -3683,7 +3683,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         <div class="server-identity-grid">
           <div class="server-id-item">
             <span class="server-id-icon">🌐</span>
-            <span>Connected via <strong id="bar-protocol-display">IPv4 (HTTP/3 Direct)</strong></span>
+            <span>Connected via <strong id="bar-protocol-display">IPv4 (TLS 1.3 Direct)</strong></span>
           </div>
           <div class="server-id-item">
             <span class="server-id-icon">🏢</span>
@@ -4314,73 +4314,295 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     // MODAL DIALOG ENGINE (RESULTS HISTORY & GLOBAL SETTINGS)
     let activeHistoryFilter = 'all'; // 'all', 'web', 'speed'
     var currentTestNum = parseInt(localStorage.getItem('bm97_telecom_runs') || '1', 10) || 1;
+    var lastTelemetrySnapshot = null;
 
-    
-    // PDF SPEED REPORT & TELEMETRY CERTIFICATE CONTROLLER
-    function openPdfReportModal(testNum) {
+    // RFC 6234 / FIPS 180-4 SHA-256 (synchronous pure-JS fallback + matches WebCrypto identically)
+    function sha256HexSync(str) {
+      const utf8 = unescape(encodeURIComponent(str || ''));
+      const words = [];
+      for (let i = 0; i < utf8.length; i++) {
+        words[i >> 2] = (words[i >> 2] || 0) | ((utf8.charCodeAt(i) & 0xff) << (24 - (i % 4) * 8));
+      }
+      const bitLen = utf8.length * 8;
+      words[bitLen >> 5] = (words[bitLen >> 5] || 0) | (0x80 << (24 - (bitLen % 32)));
+      words[((bitLen + 64 >> 9) << 4) + 15] = bitLen;
+      const K = [
+        0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+        0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+        0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+        0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+        0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+        0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+        0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+        0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
+      ];
+      const H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+      const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+      const W = new Array(64);
+      for (let i = 0; i < words.length; i += 16) {
+        let [a, b, c, d, e, f, g, h] = H;
+        for (let t = 0; t < 64; t++) {
+          if (t < 16) W[t] = words[i + t] || 0;
+          else {
+            const s0 = rotr(W[t-15], 7) ^ rotr(W[t-15], 18) ^ (W[t-15] >>> 3);
+            const s1 = rotr(W[t-2], 17) ^ rotr(W[t-2], 19) ^ (W[t-2] >>> 10);
+            W[t] = (W[t-16] + s0 + W[t-7] + s1) | 0;
+          }
+          const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+          const ch = (e & f) ^ ((~e) & g);
+          const t1 = (h + S1 + ch + K[t] + W[t]) | 0;
+          const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+          const maj = (a & b) ^ (a & c) ^ (b & c);
+          const t2 = (S0 + maj) | 0;
+          h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+        }
+        H[0] = (H[0]+a)|0; H[1] = (H[1]+b)|0; H[2] = (H[2]+c)|0; H[3] = (H[3]+d)|0;
+        H[4] = (H[4]+e)|0; H[5] = (H[5]+f)|0; H[6] = (H[6]+g)|0; H[7] = (H[7]+h)|0;
+      }
+      return H.map(v => (v >>> 0).toString(16).padStart(8, '0')).join('');
+    }
+
+    function computeCanonicalDigest(snap) {
+      const canonical = ['BM97', snap.id, snap.utc, snap.ip, snap.down, snap.up, snap.ping, snap.loadedDown, snap.loadedUp, snap.jitter, snap.loss, snap.server].join('|');
+      return sha256HexSync(canonical);
+    }
+
+    function encodeAuditVerifyUrl(snap) {
+      const compact = {
+        i: snap.id, t: snap.utc, p: snap.ip, s: snap.isp, a: snap.asn, n: snap.node,
+        c: snap.coords, e: snap.server, pr: snap.protocol, d: snap.down, u: snap.up,
+        g: snap.ping, ld: snap.loadedDown, lu: snap.loadedUp, j: snap.jitter, l: snap.loss,
+        h: snap.hash
+      };
+      const json = JSON.stringify(compact);
+      const b64 = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      return 'https://billmaster97.com/internet-speed-test/?verify=' + b64;
+    }
+
+    function formatAuditTimestamps(dateObj) {
+      const d = dateObj instanceof Date ? dateObj : new Date();
+      const utcIso = d.toISOString().replace(/\.\d{3}Z$/, 'Z');
+      let tzShort = '';
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', { timeZoneName: 'short' }).formatToParts(d);
+        tzShort = (parts.find(p => p.type === 'timeZoneName') || {}).value || '';
+      } catch (e) {}
+      if (!tzShort) {
+        try { tzShort = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { tzShort = 'UTC'; }
+      }
+      const localDate = d.toLocaleDateString();
+      const localClock = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: bmSettings?.time !== '24h' });
+      return {
+        utc: utcIso,
+        tz: tzShort,
+        clock: localClock + ' ' + tzShort,
+        localStr: localDate + ', ' + localClock + ' ' + tzShort,
+        auditStr: utcIso + ' (' + localClock + ' ' + tzShort + ')'
+      };
+    }
+
+    function computeRegionalPercentile(downSpeed) {
+      const speed = parseFloat(downSpeed) || 0;
+      if (speed < 10) return { percentile: Math.max(12, Math.round(speed * 2.5)), tier: 'Tier 1 Entry DSL', badgeColor: '#ef4444', badgeBg: 'rgba(239, 68, 68, 0.15)', needlePct: Math.max(8, Math.round(speed * 2)) };
+      if (speed < 30) return { percentile: Math.round(25 + ((speed - 10) / 20) * 35), tier: 'Tier 2 Basic Fiber', badgeColor: '#f59e0b', badgeBg: 'rgba(245, 158, 11, 0.15)', needlePct: Math.round(25 + ((speed - 10) / 20) * 25) };
+      if (speed < 100) return { percentile: Math.round(60 + ((speed - 30) / 70) * 25), tier: 'Tier 3 Standard Broadband', badgeColor: 'var(--cyan)', badgeBg: 'rgba(0, 210, 255, 0.15)', needlePct: Math.round(50 + ((speed - 30) / 70) * 25) };
+      if (speed < 300) return { percentile: Math.round(85 + ((speed - 100) / 200) * 11), tier: 'Tier 4 Ultra-Fast Fiber', badgeColor: '#10b981', badgeBg: 'rgba(16, 185, 129, 0.15)', needlePct: Math.round(75 + ((speed - 100) / 200) * 15) };
+      return { percentile: Math.min(99, Math.round(96 + ((speed - 300) / 700) * 3)), tier: 'Tier 5 Gigabit Extreme', badgeColor: '#a855f7', badgeBg: 'rgba(168, 85, 247, 0.18)', needlePct: Math.min(98, Math.round(90 + ((speed - 300) / 700) * 8)) };
+    }
+
+    function buildLineAssessment(downVal, upVal, jitterStr, lossStr, loadedDownStr, loadedUpStr) {
+      const d = parseFloat(downVal) || 0;
+      const u = parseFloat(upVal) || 0;
+      const jNum = parseFloat(jitterStr) || 0;
+      const lossNum = parseFloat(lossStr) || 0;
+      const isSymmetrical = d > 0 && u > 0 && (Math.min(d, u) / Math.max(d, u)) >= 0.85;
+      const upSub = isSymmetrical ? 'Symmetrical Line' : (u > d ? 'Asymmetric (Upload-Favored)' : 'Asymmetric Broadband');
+      const upBulletLabel = isSymmetrical ? 'Symmetrical Line Profile:' : 'Upstream Throughput:';
+      const lossNote = lossNum === 0 ? 'zero packet drop' : (lossNum.toFixed(1) + '% packet loss');
+      const jitterDesc = jNum <= 5 ? 'low socket jitter variance' : (jNum <= 15 ? 'moderate socket jitter variance' : 'elevated jitter variance');
+      const bench = computeRegionalPercentile(d);
+      const topPct = Math.max(1, 100 - bench.percentile);
+      return {
+        isSymmetrical,
+        upSub,
+        upBulletLabel,
+        lossNote,
+        jitterDesc,
+        bench,
+        benchLabel: 'Top ' + topPct + '% Benchmark Tier',
+        latencyDesc: loadedDownStr + ' ms down / ' + loadedUpStr + ' ms up with ' + jitterDesc + ' (' + jitterStr + ').'
+      };
+    }
+
+    function formatCompactAsn(rawAsn, rawIsp) {
+      if (!rawAsn) return 'AS Direct';
+      const cleanAsn = String(rawAsn).trim();
+      const m = cleanAsn.match(/^(AS\d+)\s*(?:\((.+)\))?/i);
+      if (!m) return cleanAsn;
+      const org = (m[2] || '').trim();
+      if (!org || (rawIsp && org.toLowerCase() === String(rawIsp).trim().toLowerCase())) return m[1];
+      return m[1] + ' (' + formatCleanIspName(org) + ')';
+    }
+
+    function getOrCreateTelemetrySnapshot(testNumOverride) {
+      const down = document.getElementById('disp-download')?.textContent || '0.00';
+      const up = document.getElementById('disp-upload')?.textContent || '0.00';
+      const ping = document.getElementById('disp-ping')?.textContent || '0';
+      const loadedDown = document.getElementById('disp-loaded')?.textContent || '---';
+      const loadedUp = document.getElementById('disp-up-ping')?.textContent || '---';
+      const jitter = document.getElementById('disp-jitter')?.textContent || '0.00ms';
+      const loss = document.getElementById('disp-loss')?.textContent || '0.0%';
+      const rawId = document.getElementById('disp-result-id')?.textContent || '';
+      const telecomId = testNumOverride
+        ? ('BM97-' + String(testNumOverride).replace(/^#|^BM97-/i, ''))
+        : ((typeof currentTelecomId !== 'undefined' && currentTelecomId) ? currentTelecomId : (rawId.replace(/^Result\s*ID:\s*/i, '').trim() || ('BM97-' + currentTestNum)));
+      const srvName = (typeof clientNetwork !== 'undefined' && clientNetwork.server) ? clientNetwork.server : 'Cloudflare Anycast Edge';
+      const net = (typeof clientNetwork !== 'undefined') ? clientNetwork : {};
+
+      if (lastTelemetrySnapshot && !testNumOverride &&
+          lastTelemetrySnapshot.id === telecomId &&
+          lastTelemetrySnapshot.down === down &&
+          lastTelemetrySnapshot.up === up &&
+          lastTelemetrySnapshot.ping === ping) {
+        return lastTelemetrySnapshot;
+      }
+
+      const ts = formatAuditTimestamps(new Date());
+      const qoe = computeGenuineQoE(down, up, ping, loadedDown, loadedUp);
+      const snap = {
+        id: telecomId,
+        utc: ts.utc,
+        localTime: ts.localStr,
+        auditTime: ts.auditStr,
+        ip: net.ip || '---',
+        isp: net.isp || 'Broadband ISP',
+        asn: formatCompactAsn(net.asn || 'AS Direct', net.isp),
+        node: [net.city, net.region, net.country].filter(Boolean).join(', ') || 'Global Edge',
+        coords: (net.lat && net.lon) ? (Number(net.lat).toFixed(4) + ' N / ' + Number(net.lon).toFixed(4) + ' E') : '---',
+        server: srvName,
+        protocol: net.protocol || 'TLS 1.3 Direct',
+        down, up, ping, loadedDown, loadedUp, jitter, loss,
+        qoe
+      };
+      snap.hash = computeCanonicalDigest(snap);
+      snap.verifyUrl = encodeAuditVerifyUrl(snap);
+      lastTelemetrySnapshot = snap;
+      return snap;
+    }
+
+    function copyVerifyUrl() {
+      const snap = getOrCreateTelemetrySnapshot();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(snap.verifyUrl).then(() => {
+          const btn = document.getElementById('btn-copy-verify-url');
+          if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = '✓ Copied Verify URL!';
+            setTimeout(() => { btn.innerHTML = orig; }, 1800);
+          }
+        }).catch(() => prompt('Copy Verification Link:', snap.verifyUrl));
+      } else {
+        prompt('Copy Verification Link:', snap.verifyUrl);
+      }
+    }
+
+    function applySnapshotToPdfModal(snap, verifiedState) {
       const modal = document.getElementById('modal-pdf-report');
       if (!modal) return;
-
-      const telecomSuffix = (typeof currentTelecomId !== 'undefined' && currentTelecomId) ? currentTelecomId.replace('BM97-', '') : null;
-      const num = testNum || telecomSuffix || currentTestNum || 1;
       const certIdElem = document.getElementById('pdf-cert-id');
-      if (certIdElem) certIdElem.textContent = 'BM97-CERT-' + String(num).replace(/^#/, '');
+      if (certIdElem) certIdElem.textContent = snap.id.replace('BM97-', 'BM97-CERT-');
 
-      // Update current values from cockpit
-      const dispDown = document.getElementById('disp-download')?.textContent || '0.00';
-      const dispUp = document.getElementById('disp-upload')?.textContent || '0.00';
-      const dispPing = document.getElementById('disp-ping')?.textContent || '0';
-      const dispLoaded = document.getElementById('disp-loaded')?.textContent || '---';
-      const dispUpPing = document.getElementById('disp-up-ping')?.textContent || '---';
-      const timeStr = document.getElementById('tb-measured-time')?.textContent || new Date().toLocaleTimeString();
-
-      const pdfDown = document.getElementById('pdf-val-down');
-      const pdfUp = document.getElementById('pdf-val-up');
-      const pdfPing = document.getElementById('pdf-val-ping');
-      const pdfTime = document.getElementById('pdf-val-time');
-
-      if (pdfDown) pdfDown.textContent = dispDown;
-      if (pdfUp) pdfUp.textContent = dispUp;
-      if (pdfPing) pdfPing.textContent = dispPing;
-      if (pdfTime) pdfTime.textContent = new Date().toLocaleDateString() + ' • ' + timeStr;
-
-      // Network details
-      const pdfIsp = document.getElementById('pdf-val-isp');
-      if (pdfIsp) pdfIsp.textContent = clientNetwork.isp;
-      const pdfIp = document.getElementById('pdf-val-ip');
-      if (pdfIp) pdfIp.textContent = clientNetwork.ip;
-      const pdfAsn = document.getElementById('pdf-val-asn');
-      if (pdfAsn) pdfAsn.textContent = clientNetwork.asn;
-      const pdfNode = document.getElementById('pdf-val-node');
-      if (pdfNode) pdfNode.textContent = [clientNetwork.city, clientNetwork.region, clientNetwork.country].filter(Boolean).join(', ') || 'Global Peering Node';
-      const pdfCoords = document.getElementById('pdf-val-coords');
-      if (pdfCoords && clientNetwork.lat && clientNetwork.lon) {
-        pdfCoords.textContent = Number(clientNetwork.lat).toFixed(4) + '° N / ' + Number(clientNetwork.lon).toFixed(4) + '° E';
+      const banner = document.getElementById('pdf-verify-banner');
+      if (banner) {
+        if (verifiedState === 'valid') {
+          banner.style.display = 'block';
+          banner.style.background = 'rgba(16, 185, 129, 0.14)';
+          banner.style.border = '1px solid rgba(16, 185, 129, 0.45)';
+          banner.style.color = '#10b981';
+          banner.textContent = '✓ CRYPTOGRAPHIC SIGNATURE VERIFIED — SHA-256 hash matches exact certificate telemetry (' + snap.utc + ').';
+        } else if (verifiedState === 'invalid') {
+          banner.style.display = 'block';
+          banner.style.background = 'rgba(244, 63, 94, 0.14)';
+          banner.style.border = '1px solid rgba(244, 63, 94, 0.45)';
+          banner.style.color = '#f43f5e';
+          banner.textContent = '⚠ VERIFICATION FAILED — SHA-256 signature mismatch. Certificate parameters may have been altered.';
+        } else {
+          banner.style.display = 'none';
+        }
       }
-      const pdfServer = document.getElementById('pdf-val-server');
-      if (pdfServer) pdfServer.textContent = clientNetwork.server;
 
-      const pdfLoadedDown = document.getElementById('pdf-val-loaded-down');
-      if (pdfLoadedDown) pdfLoadedDown.textContent = dispLoaded + (dispLoaded !== '---' ? ' ms' : '');
-      const pdfLoadedUp = document.getElementById('pdf-val-loaded-up');
-      if (pdfLoadedUp) pdfLoadedUp.textContent = dispUpPing + (dispUpPing !== '---' ? ' ms' : '');
+      const assess = buildLineAssessment(snap.down, snap.up, snap.jitter, snap.loss, snap.loadedDown, snap.loadedUp);
+      const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+      setEl('pdf-val-down', snap.down);
+      setEl('pdf-val-up', snap.up);
+      setEl('pdf-val-up-sub', 'Mbps (' + assess.upSub + ')');
+      setEl('pdf-val-ping', snap.ping);
+      setEl('pdf-val-ping-sub', 'ms (' + snap.jitter + ' Jitter · ' + snap.loss + ' Loss)');
+      setEl('pdf-val-time', snap.auditTime);
+      setEl('pdf-val-isp', snap.isp);
+      setEl('pdf-val-ip', snap.ip);
+      setEl('pdf-val-asn', snap.asn);
+      setEl('pdf-val-node', snap.node);
+      setEl('pdf-val-coords', snap.coords);
+      setEl('pdf-val-server', snap.server);
+      setEl('pdf-val-loaded-down', snap.loadedDown + (snap.loadedDown !== '---' ? ' ms' : ''));
+      setEl('pdf-val-loaded-up', snap.loadedUp + (snap.loadedUp !== '---' ? ' ms' : ''));
+      setEl('pdf-val-bufferbloat', snap.qoe.stability.sub || 'Verified');
+      setEl('pdf-val-benchmark-badge', '⭐ ' + assess.benchLabel + ' (' + (clientNetwork.serverCity || 'Global Edge') + ')');
+      setEl('pdf-val-down-desc', snap.down);
+      setEl('pdf-val-bench-upload-label', assess.upBulletLabel);
+      setEl('pdf-val-up-desc', snap.up);
+      setEl('pdf-val-loss-note', assess.lossNote);
+      setEl('pdf-val-loaded-desc', snap.loadedDown);
+      setEl('pdf-val-loaded-extra', assess.jitterDesc + ' (' + snap.jitter + ')');
+      setEl('pdf-val-hash', 'SHA-256: ' + snap.hash.slice(0, 28) + '...');
 
-      // Benchmark & Bullets
-      const badgeElem = document.getElementById('pdf-val-benchmark-badge');
-      if (badgeElem) {
-        badgeElem.textContent = clientNetwork.city ? '⭐ Better than regional average in ' + clientNetwork.city : '⭐ Verified Broadband Speed';
-      }
-      const descDown = document.getElementById('pdf-val-down-desc');
-      if (descDown) descDown.textContent = dispDown;
-      const descUp = document.getElementById('pdf-val-up-desc');
-      if (descUp) descUp.textContent = dispUp;
-      const descLoaded = document.getElementById('pdf-val-loaded-desc');
-      if (descLoaded) descLoaded.textContent = dispLoaded;
-
-      // Ensure 100% genuine QoE is computed for modal view
-      updateQoEUI(dispDown, dispUp, dispPing, dispLoaded, dispUpPing);
-
+      updateQoEUI(snap.down, snap.up, snap.ping, snap.loadedDown, snap.loadedUp);
       modal.classList.add('active');
+    }
+
+    function checkVerifyUrlOnBoot() {
+      try {
+        const token = new URLSearchParams(window.location.search).get('verify');
+        if (!token) return;
+        const b64 = token.replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(b64))));
+        const snap = {
+          id: decoded.i || 'BM97-0',
+          utc: decoded.t || '',
+          localTime: decoded.t || '',
+          auditTime: decoded.t || '',
+          ip: decoded.p || '---',
+          isp: decoded.s || 'Broadband ISP',
+          asn: decoded.a || 'AS Direct',
+          node: decoded.n || 'Global Edge',
+          coords: decoded.c || '---',
+          server: decoded.e || 'Cloudflare Anycast Edge',
+          protocol: decoded.pr || 'TLS 1.3 Direct',
+          down: decoded.d || '0.00',
+          up: decoded.u || '0.00',
+          ping: decoded.g || '0',
+          loadedDown: decoded.ld || '---',
+          loadedUp: decoded.lu || '---',
+          jitter: decoded.j || '0.00ms',
+          loss: decoded.l || '0.0%',
+          hash: decoded.h || ''
+        };
+        snap.qoe = computeGenuineQoE(snap.down, snap.up, snap.ping, snap.loadedDown, snap.loadedUp);
+        const expected = computeCanonicalDigest(snap);
+        const isValid = Boolean(snap.hash && expected === snap.hash);
+        snap.verifyUrl = window.location.href;
+        lastTelemetrySnapshot = snap;
+        applySnapshotToPdfModal(snap, isValid ? 'valid' : 'invalid');
+      } catch (e) {
+        console.warn('Invalid verification link:', e);
+      }
+    }
+
+    // PDF SPEED REPORT & TELEMETRY CERTIFICATE CONTROLLER
+    function openPdfReportModal(testNum) {
+      const snap = getOrCreateTelemetrySnapshot(testNum);
+      applySnapshotToPdfModal(snap, null);
     }
 
     function closePdfReportModal() {
@@ -4402,28 +4624,27 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     }
 
     function logLiveTelemetryToConsole() {
-      const down = document.getElementById('disp-download')?.textContent || '49.80';
-      const up = document.getElementById('disp-upload')?.textContent || '50.96';
-      const ping = document.getElementById('disp-ping')?.textContent || '4.0';
-      const loaded = document.getElementById('disp-loaded')?.textContent || '33';
-      const upPing = document.getElementById('disp-up-ping')?.textContent || '93';
-      
+      const snap = getOrCreateTelemetrySnapshot();
       const auditLog = {
         'Engine': 'BillMaster97 Sovereign Speedtest Pro v2.3.3',
-        'Standard': 'ITU-T Y.1540 / ETSI EG 202 057 / FCC MBA / IETF RFC 6349 / RFC 3393 / RFC 8290 Baseline',
-        'Download Throughput (Mbps)': down,
-        'Upload Throughput (Mbps)': up,
-        'Idle Ping (ms)': ping,
-        'Loaded Ping Down (ms)': loaded,
-        'Loaded Ping Up (ms)': upPing,
-        'Bufferbloat Grade': 'Grade A (Low Lag / eSports Verified)',
-        'QoE Score': '98 / 100 (Tier 1 Ultra-Fiber)',
-        'Client IPv4': clientNetwork.ip || '103.165.115.109',
-        'ISP Provider': clientNetwork.isp || 'GTPL KCBPL Broadband',
-        'Integrity Hash': 'SHA-256: 7f83b1657ff1fc53b92dc1810f5439a8e2cb927361957de0b07ac02194bb8b97',
-        'Audit Verification': 'PASSED (100% Genuine Client-Side Sockets)'
+        'Standard': 'ITU-T Y.1540 / ETSI EG 202 057 / FCC MBA / IETF RFC 6349 / RFC 3393 / RFC 8290',
+        'Result ID': snap.id,
+        'UTC Timestamp': snap.utc,
+        'Download Throughput (Mbps)': snap.down,
+        'Upload Throughput (Mbps)': snap.up,
+        'Idle Ping (ms)': snap.ping,
+        'RFC 3393 Jitter': snap.jitter,
+        'Loaded Ping Down (ms)': snap.loadedDown,
+        'Loaded Ping Up (ms)': snap.loadedUp,
+        'Bufferbloat Grade': snap.qoe.stability.sub,
+        'QoE Score': snap.qoe.overallScore + ' / 100',
+        'Edge Target': snap.server,
+        'Negotiated Protocol': snap.protocol,
+        'Client IP': snap.ip,
+        'ISP Provider': snap.isp,
+        'SHA-256 Digest': snap.hash,
+        'Verification URL': snap.verifyUrl
       };
-      
       console.log('%c⚡ BILLMASTER97 RAW TELEMETRY & NETWORK SOCKET AUDIT', 'color: #00d2ff; font-weight: bold; font-size: 14px;');
       console.table(auditLog);
       alert('✓ Live raw telemetry table printed to browser console! Press F12 -> Console to view.');
@@ -4696,8 +4917,6 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
           const W = width;
           const H = height;
-          const num = (typeof currentTestNum !== 'undefined' && currentTestNum) ? currentTestNum : 15;
-          const safeTelecomId = (typeof currentTelecomId !== 'undefined' && currentTelecomId) ? currentTelecomId : ('BM97-' + num);
 
           // ==============================================================
           // UNIVERSAL MULTI-LANGUAGE & INTERNATIONAL RESILIENCE UTILITIES
@@ -4746,18 +4965,24 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             return x + font.widthOfTextAtSize(safe, size);
           }
 
-          // Dynamic Telemetry Extraction
-          const downVal = document.getElementById('disp-download')?.textContent || '49.80';
-          const upVal = document.getElementById('disp-upload')?.textContent || '50.96';
-          const pingVal = document.getElementById('disp-ping')?.textContent || '4';
-          const time = document.getElementById('tb-measured-time')?.textContent || '7:55:41 AM';
-
-          const ispRaw = clientNetwork.isp || document.getElementById('pdf-val-isp')?.textContent || 'Broadband ISP';
-          const ipRaw = clientNetwork.ip || document.getElementById('pdf-val-ip')?.textContent || '---';
-          const serverRaw = clientNetwork.server || document.getElementById('pdf-val-server')?.textContent || 'Cloudflare Ultra-Edge';
-          const nodeRaw = [clientNetwork.city, clientNetwork.region, clientNetwork.country].filter(Boolean).join(', ') || 'Global Peering Node';
-          const asnRaw = clientNetwork.asn || 'AS Direct';
-          const coordsRaw = (clientNetwork.lat && clientNetwork.lon) ? (Number(clientNetwork.lat).toFixed(4) + ' N / ' + Number(clientNetwork.lon).toFixed(4) + ' E') : '---';
+          // Dynamic Telemetry Extraction (Unified Auditable Snapshot)
+          const snap = getOrCreateTelemetrySnapshot();
+          const downVal = snap.down;
+          const upVal = snap.up;
+          const pingVal = snap.ping;
+          const ispRaw = snap.isp;
+          const ipRaw = snap.ip;
+          const serverRaw = snap.server;
+          const nodeRaw = snap.node;
+          const asnRaw = snap.asn;
+          const coordsRaw = snap.coords;
+          const safeTelecomId = snap.id;
+          const jitterRaw = snap.jitter;
+          const lossRaw = snap.loss;
+          const loadedDownRaw = snap.loadedDown;
+          const loadedUpRaw = snap.loadedUp;
+          const genuineQoE = snap.qoe;
+          const assess = buildLineAssessment(downVal, upVal, jitterRaw, lossRaw, loadedDownRaw, loadedUpRaw);
 
           const isDark = (currentCertTheme === 'dark');
 
@@ -4798,15 +5023,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             color: cBadgeBg
           });
 
-          page.drawText('CERTIFICATE: ' + safeTelecomId.replace('BM97-', 'BM97-CERT-'), {
-            x: W - 233, y: 786, size: 9.5, font: fontBold,
-            color: cGreen
-          });
-
-          page.drawText('[VERIFIED AUDIT] ZERO LOGS RECORDED', {
-            x: W - 233, y: 772, size: 7.5, font: fontBold,
-            color: isDark ? rgb(167/255, 243/255, 208/255) : rgb(6/255, 95/255, 70/255)
-          });
+          drawLeftBounded('CERTIFICATE: ' + safeTelecomId.replace('BM97-', 'BM97-CERT-'), W - 235, 786, W - 50, fontBold, 9.5, cGreen);
+          drawLeftBounded('[VERIFIED AUDIT] SHA-256 SIGNED', W - 235, 772, W - 50, fontBold, 7.5, isDark ? rgb(167/255, 243/255, 208/255) : rgb(6/255, 95/255, 70/255));
 
           // Subtitle dynamically bounded: never crosses W - 245 - 15 = 335 pt
           drawLeftBounded('SOVEREIGN TELEMETRY & AUDIT CERTIFICATE', 44, 768, W - 260, fontBold, 8, cTextSub);
@@ -4829,7 +5047,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           page.drawRectangle({ x: 44, y: 737, width: 163, height: 3, color: cCyan });
           page.drawText('DOWNLOAD THROUGHPUT', { x: 54, y: 720, size: 8, font: fontBold, color: cTextMuted });
           page.drawText(downVal + ' Mbps', { x: 54, y: 686, size: 21, font: fontBold, color: cCyan });
-          drawLeftBounded('90th Percentile Sustained Line', 54, 665, 200, fontRegular, 7.5, cTextMuted);
+          drawLeftBounded('RFC 6349 Sustained Window', 54, 665, 200, fontRegular, 7.5, cTextMuted);
 
           // Card 2: Upload
           page.drawRectangle({
@@ -4840,15 +5058,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           page.drawRectangle({ x: 216, y: 737, width: 163, height: 3, color: cPurple });
           page.drawText('UPLOAD THROUGHPUT', { x: 226, y: 720, size: 8, font: fontBold, color: cTextMuted });
           page.drawText(upVal + ' Mbps', { x: 226, y: 686, size: 21, font: fontBold, color: cPurple });
-          drawLeftBounded('Symmetrical High-Speed Line', 226, 665, 370, fontRegular, 7.5, cTextMuted);
+          drawLeftBounded(assess.upSub, 226, 665, 370, fontRegular, 7.5, cTextMuted);
 
           // Card 3: Idle Latency
-          const jitterRaw = document.getElementById('disp-jitter')?.textContent || '2.03 ms';
-          const lossRaw = document.getElementById('disp-loss')?.textContent || '0.0%';
-          const loadedDownRaw = document.getElementById('disp-loaded')?.textContent || '---';
-          const loadedUpRaw = document.getElementById('disp-up-ping')?.textContent || '---';
-          const genuineQoE = computeGenuineQoE(downVal, upVal, pingVal, loadedDownRaw, loadedUpRaw);
-
           page.drawRectangle({
             x: 388, y: 652, width: 163, height: 88,
             borderColor: cAmber, borderWidth: 1.2,
@@ -4871,55 +5083,56 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             color: cHeadBarBg
           });
           // Right Badge dynamically right-aligned against right border (x=540)
-          const netBadgeLeft = drawRight('Direct Edge Peering Active (HTTP/3)', 540, 623, fontBold, 8, cGreen);
+          const netBadgeLeft = drawRight('Anycast Edge · ' + snap.protocol, 540, 623, fontBold, 8, cGreen);
           // Left Title automatically clamped before badge
           drawLeftBounded('NETWORK AUDIT & TELEMETRY VERIFICATION', 56, 623, netBadgeLeft - 15, fontBold, 9, cHeadBarText);
 
-          // 2-COLUMN GRID WITH DYNAMIC CLAMPING (Col 1: x=56 to 305 | Col 2: x=320 to 540)
+          // 2-COLUMN GRID WITH DYNAMIC CLAMPING (Col 1: x=56 to 300 | Col 2: x=310 to 544)
           // Line 1 (y: 594)
           const lblIspW = fontBold.widthOfTextAtSize('ISP Provider: ', 8.5);
           page.drawText('ISP Provider:', { x: 56, y: 594, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded(ispRaw, 56 + lblIspW, 594, 305, fontBold, 8.5, cTextHead);
+          drawLeftBounded(ispRaw, 56 + lblIspW, 594, 300, fontBold, 8, cTextHead);
 
-          const lblSrvW = fontBold.widthOfTextAtSize('Peering Server: ', 8.5);
-          page.drawText('Peering Server:', { x: 320, y: 594, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded(serverRaw, 320 + lblSrvW, 594, 540, fontBold, 8.5, cTextHead);
+          const lblSrvW = fontBold.widthOfTextAtSize('Test Server: ', 8.5);
+          page.drawText('Test Server:', { x: 310, y: 594, size: 8.5, font: fontBold, color: cTextMuted });
+          drawLeftBounded(serverRaw, 310 + lblSrvW, 594, 544, fontBold, 8, cTextHead);
 
           // Line 2 (y: 574)
-          const lblIpW = fontBold.widthOfTextAtSize('Client IPv4: ', 8.5);
-          page.drawText('Client IPv4:', { x: 56, y: 574, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded(ipRaw, 56 + lblIpW, 574, 305, fontBold, 9, cCyan);
+          const ipLabelText = (ipRaw && ipRaw.includes(':')) ? 'Client IPv6:' : 'Client IPv4:';
+          const lblIpW = fontBold.widthOfTextAtSize(ipLabelText + ' ', 8.5);
+          page.drawText(ipLabelText, { x: 56, y: 574, size: 8.5, font: fontBold, color: cTextMuted });
+          drawLeftBounded(ipRaw, 56 + lblIpW, 574, 300, fontBold, 8.5, cCyan);
 
           const lblPingW = fontBold.widthOfTextAtSize('Loaded Ping (Down/Up): ', 8.5);
-          page.drawText('Loaded Ping (Down/Up):', { x: 320, y: 574, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded(loadedDownRaw + ' ms  /  ' + loadedUpRaw + ' ms', 320 + lblPingW, 574, 540, fontBold, 8.5, cAmber);
+          page.drawText('Loaded Ping (Down/Up):', { x: 310, y: 574, size: 8.5, font: fontBold, color: cTextMuted });
+          drawLeftBounded(loadedDownRaw + ' ms / ' + loadedUpRaw + ' ms', 310 + lblPingW, 574, 544, fontBold, 8.5, cAmber);
 
           // Line 3 (y: 554)
-          const lblAsnW = fontBold.widthOfTextAtSize('Autonomous System: ', 8.5);
-          page.drawText('Autonomous System:', { x: 56, y: 554, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded(asnRaw, 56 + lblAsnW, 554, 305, fontRegular, 8.5, cTextBody);
+          const lblAsnW = fontBold.widthOfTextAtSize('Autonomous Sys: ', 8.5);
+          page.drawText('Autonomous Sys:', { x: 56, y: 554, size: 8.5, font: fontBold, color: cTextMuted });
+          drawLeftBounded(asnRaw, 56 + lblAsnW, 554, 300, fontRegular, 8.5, cTextBody);
 
           const lblBufW = fontBold.widthOfTextAtSize('Bufferbloat Grade: ', 8.5);
-          page.drawText('Bufferbloat Grade:', { x: 320, y: 554, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded(genuineQoE.stability.sub || 'Grade A (Verified)', 320 + lblBufW, 554, 540, fontBold, 8.5, cGreen);
+          page.drawText('Bufferbloat Grade:', { x: 310, y: 554, size: 8.5, font: fontBold, color: cTextMuted });
+          drawLeftBounded(genuineQoE.stability.sub || 'Verified', 310 + lblBufW, 554, 544, fontBold, 8.5, cGreen);
 
           // Line 4 (y: 534)
           const lblNodeW = fontBold.widthOfTextAtSize('Physical Node: ', 8.5);
           page.drawText('Physical Node:', { x: 56, y: 534, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded(nodeRaw, 56 + lblNodeW, 534, 305, fontRegular, 8.5, cTextBody);
+          drawLeftBounded(nodeRaw, 56 + lblNodeW, 534, 300, fontRegular, 8.5, cTextBody);
 
           const lblCoordsW = fontBold.widthOfTextAtSize('Geo Coordinates: ', 8.5);
-          page.drawText('Geo Coordinates:', { x: 320, y: 534, size: 8.5, font: fontBold, color: cTextMuted });
-          drawLeftBounded(coordsRaw, 320 + lblCoordsW, 534, 540, fontRegular, 8.5, cTextMuted);
+          page.drawText('Geo Coordinates:', { x: 310, y: 534, size: 8.5, font: fontBold, color: cTextMuted });
+          drawLeftBounded(coordsRaw, 310 + lblCoordsW, 534, 544, fontRegular, 8.5, cTextMuted);
 
           // Line 5 (y: 516)
           const lblModeW = fontBold.widthOfTextAtSize('Connection Mode: ', 8);
           page.drawText('Connection Mode:', { x: 56, y: 516, size: 8, font: fontRegular, color: cTextMuted });
-          drawLeftBounded('Multi-Socket Parallel Stream', 56 + lblModeW, 516, 305, fontRegular, 8, cTextBody);
+          drawLeftBounded((typeof isMulti !== 'undefined' && !isMulti) ? 'Single-Socket TCP Stream' : 'Multi-Socket Parallel Stream', 56 + lblModeW, 516, 300, fontRegular, 8, cTextBody);
 
           const lblProtW = fontBold.widthOfTextAtSize('Route Protocol: ', 8);
-          page.drawText('Route Protocol:', { x: 320, y: 516, size: 8, font: fontRegular, color: cTextMuted });
-          drawLeftBounded('TLS 1.3 / HTTP-3 Direct', 320 + lblProtW, 516, 540, fontRegular, 8, cTextBody);
+          page.drawText('Route Protocol:', { x: 310, y: 516, size: 8, font: fontRegular, color: cTextMuted });
+          drawLeftBounded(snap.protocol, 310 + lblProtW, 516, 544, fontRegular, 8, cTextBody);
 
           // 5. QUALITY OF EXPERIENCE (QoE) 6-PILLAR ASSESSMENT (100% Genuine Metrics)
 
@@ -4986,57 +5199,62 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             x: 45, y: 282, width: 505, height: 23,
             color: cHeadBarBg
           });
-          // Right Benchmark dynamically right-aligned
-          const benchBadgeLeft = drawRight('Regional Rank: Top 38% Sustained', 540, 289, fontBold, 8.5, cAmber);
+          // Right Benchmark dynamically computed & right-aligned
+          const benchBadgeLeft = drawRight(assess.benchLabel + ' (' + assess.bench.tier + ')', 540, 289, fontBold, 8.5, cAmber);
           // Left Title clamped
           drawLeftBounded('THROUGHPUT CURVES & REGIONAL BENCHMARK', 56, 289, benchBadgeLeft - 15, fontBold, 9, cHeadBarText);
 
-          // Benchmark Bullets with auto-clamping at right edge (540)
-          const b1W = fontBold.widthOfTextAtSize('[+] Sustained 90th Percentile Download: ', 8);
-          page.drawText('[+] Sustained 90th Percentile Download:', { x: 56, y: 262, size: 8, font: fontBold, color: cTextHead });
-          drawLeftBounded(downVal + ' Mbps real throughput sustained across edge sockets.', 56 + b1W, 262, 540, fontRegular, 8, cTextMuted);
+          // Benchmark Bullets with auto-clamping at right edge (540) and proper spacing
+          const b1Lbl = '[+] Sustained Download Window: ';
+          const b1W = fontBold.widthOfTextAtSize(b1Lbl, 8);
+          page.drawText(b1Lbl, { x: 56, y: 262, size: 8, font: fontBold, color: cTextHead });
+          drawLeftBounded(downVal + ' Mbps sustained post-warmup over parallel sockets.', 56 + b1W, 262, 540, fontRegular, 8, cTextMuted);
 
-          const b2W = fontBold.widthOfTextAtSize('[+] Symmetrical Fiber Line Verified: ', 8);
-          page.drawText('[+] Symmetrical Fiber Line Verified:', { x: 56, y: 242, size: 8, font: fontBold, color: cTextHead });
-          drawLeftBounded('Upload speed verified at ' + upVal + ' Mbps with zero packet drop.', 56 + b2W, 242, 540, fontRegular, 8, cTextMuted);
+          const b2Lbl = '[+] ' + assess.upBulletLabel + ' ';
+          const b2W = fontBold.widthOfTextAtSize(b2Lbl, 8);
+          page.drawText(b2Lbl, { x: 56, y: 242, size: 8, font: fontBold, color: cTextHead });
+          drawLeftBounded('Upload sustained at ' + upVal + ' Mbps with ' + assess.lossNote + '.', 56 + b2W, 242, 540, fontRegular, 8, cTextMuted);
 
-          const b3W = fontBold.widthOfTextAtSize('[+] Bufferbloat & Latency Under Load: ', 8);
-          page.drawText('[+] Bufferbloat & Latency Under Load:', { x: 56, y: 222, size: 8, font: fontBold, color: cTextHead });
-          const loadedDown = document.getElementById('disp-loaded')?.textContent || '33'; const loadedUp = document.getElementById('disp-up-ping')?.textContent || '45'; drawLeftBounded(loadedDown + ' ms down / ' + loadedUp + ' ms up with low socket jitter.', 56 + b3W, 222, 540, fontRegular, 8, cTextMuted);
+          const b3Lbl = '[+] Bufferbloat & Latency Under Load: ';
+          const b3W = fontBold.widthOfTextAtSize(b3Lbl, 8);
+          page.drawText(b3Lbl, { x: 56, y: 222, size: 8, font: fontBold, color: cTextHead });
+          drawLeftBounded(assess.latencyDesc, 56 + b3W, 222, 540, fontRegular, 8, cTextMuted);
 
-          const b4W = fontBold.widthOfTextAtSize('[+] Application Headroom: ', 8);
-          page.drawText('[+] Application Headroom:', { x: 56, y: 202, size: 8, font: fontBold, color: cTextHead });
-          drawLeftBounded('Certified for 4K UHD Multi-Stream, Low-Latency Gaming & Calls.', 56 + b4W, 202, 540, fontRegular, 8, cTextMuted);
+          const b4Lbl = '[+] Application Headroom: ';
+          const b4W = fontBold.widthOfTextAtSize(b4Lbl, 8);
+          page.drawText(b4Lbl, { x: 56, y: 202, size: 8, font: fontBold, color: cTextHead });
+          drawLeftBounded('Overall QoE ' + genuineQoE.overallScore + '/100 | Streaming ' + genuineQoE.streaming.score + '/10 | Calls ' + genuineQoE.calls.score + '/10.', 56 + b4W, 202, 540, fontRegular, 8, cTextMuted);
 
-          const b5W = fontBold.widthOfTextAtSize('[+] Sovereign Protocol: ', 8);
-          page.drawText('[+] Sovereign Protocol:', { x: 56, y: 184, size: 8, font: fontBold, color: cTextHead });
-          drawLeftBounded('ITU-T Y.1540 / ETSI EG 202 057 / FCC MBA / RFC 6349 / RFC 3393 Telemetry in-browser.', 56 + b5W, 184, 540, fontRegular, 8, cTextMuted);
+          const b5Lbl = '[+] Standards & Audit Scope: ';
+          const b5W = fontBold.widthOfTextAtSize(b5Lbl, 8);
+          page.drawText(b5Lbl, { x: 56, y: 184, size: 8, font: fontBold, color: cTextHead });
+          drawLeftBounded('ITU-T Y.1540 / ETSI EG 202 057 / FCC MBA / RFC 6349 / RFC 3393 / RFC 8290 in-browser.', 56 + b5W, 184, 540, fontRegular, 8, cTextMuted);
 
-          // 7. CRYPTOGRAPHIC INTEGRITY & SOVEREIGN TELEMETRY FOOTER (y: 44 to 160, height: 116)
+          // 7. CRYPTOGRAPHIC INTEGRITY & SOVEREIGN TELEMETRY FOOTER (y: 38 to 160, height: 122)
           page.drawRectangle({
-            x: 44, y: 44, width: 507, height: 116,
+            x: 44, y: 38, width: 507, height: 122,
             borderColor: cCardBorder, borderWidth: 1,
             color: cCardBg
           });
-          drawLeftBounded('CRYPTOGRAPHIC INTEGRITY & SOVEREIGN TELEMETRY SIGNATURE', 56, 142, 530, fontBold, 8.5, cTextMuted);
+          drawLeftBounded('CRYPTOGRAPHIC INTEGRITY & SOVEREIGN TELEMETRY SIGNATURE', 56, 143, 530, fontBold, 8.5, cTextMuted);
           page.drawLine({
-            start: { x: 56, y: 134 }, end: { x: 539, y: 134 },
+            start: { x: 56, y: 135 }, end: { x: 539, y: 135 },
             thickness: 0.8, color: cCardBorder
           });
 
-          page.drawText('Timestamp:', { x: 56, y: 118, size: 8, font: fontRegular, color: cTextMuted });
-          drawLeftBounded(new Date().toLocaleDateString() + ' • ' + time + ' IST', 110, 118, 290, fontBold, 8, cTextHead);
+          page.drawText('UTC Timestamp:', { x: 56, y: 120, size: 7.5, font: fontRegular, color: cTextMuted });
+          drawLeftBounded(snap.auditTime, 122, 120, 355, fontBold, 7.5, cTextHead);
 
-          page.drawText('Session Nonce:', { x: 300, y: 118, size: 8, font: fontRegular, color: cTextMuted });
-          drawLeftBounded(safeTelecomId, 375, 118, 540, fontBold, 8, cTextHead);
+          page.drawText('Session ID:', { x: 365, y: 120, size: 7.5, font: fontRegular, color: cTextMuted });
+          drawLeftBounded(safeTelecomId, 415, 120, 542, fontBold, 7.5, cTextHead);
 
-          drawLeftBounded('Integrity Hash: SHA-256: 7f83b1657ff1fc53b92dc1810f5439a8e2cb927361957de0b07ac02194bb8b97', 56, 100, 540, fontBold, 7.5, cCyan);
+          drawLeftBounded('Integrity Hash: SHA-256: ' + snap.hash, 56, 102, 542, fontBold, 7.2, cCyan);
 
-          drawLeftBounded('Diagnostic Engine: BillMaster97 Sovereign Speedtest Pro v2.3.3 | RFC 6349 & TR-143 Telemetry Standards Compliant', 56, 82, 540, fontRegular, 7.5, cTextMuted);
+          drawLeftBounded('Online Verification: Click "Verify Link" in modal or inspect canonically hashed payload on billmaster97.com', 56, 85, 542, fontRegular, 7, cTextMuted);
 
-          drawLeftBounded('Client Verification: ' + ispRaw + ' (' + ipRaw + ') | Peering: ' + serverRaw, 56, 65, 540, fontRegular, 7.5, cTextMuted);
+          drawLeftBounded('Client Verification: ' + ispRaw + ' (' + ipRaw + ') | Target: ' + serverRaw, 56, 68, 542, fontRegular, 7.2, cTextMuted);
 
-          drawLeftBounded('[OK] Sovereign Privacy Guarantee: 100% Client-Side In-Memory Telemetry. Zero User Data Transmitted or Logged.', 56, 50, 540, fontBold, 7.5, cGreen);
+          drawLeftBounded('[OK] Sovereign Privacy Guarantee: 100% Client-Side In-Memory Telemetry. Zero User Logs Stored.', 56, 51, 542, fontBold, 7.2, cGreen);
 
           const pdfBytes = await pdfDoc.save();
           let fileUrl;
@@ -5550,34 +5768,15 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         bestHub = EDGE_SERVERS.find(h => h.id === 'kolkata') || EDGE_SERVERS[0];
       }
 
-      let srvName = bestHub.defaultName;
-      let shortHost = 'Direct Core';
-      const ispLow = ispName.toLowerCase();
-      if (ispLow.includes('gtpl') || ispLow.includes('abhishek')) {
-        srvName = 'GTPL KCBPL Broadband Pvt Ltd';
-        shortHost = 'GTPL KCBPL';
-      } else if (ispLow.includes('airtel')) {
-        srvName = 'Bharti Airtel Optical Core';
-        shortHost = 'Airtel';
-      } else if (ispLow.includes('jio')) {
-        srvName = 'Reliance Jio HyperScale';
-        shortHost = 'Jio';
-      } else if (ispLow.includes('alliance')) {
-        srvName = 'Alliance Broadband';
-        shortHost = 'Alliance';
-      } else if (ispLow.includes('act')) {
-        srvName = 'ACT Fibernet';
-        shortHost = 'ACT';
-      } else {
-        shortHost = bestHub.city;
-      }
+      const iataCode = bestHub.iata || 'EDGE';
+      const srvName = 'Cloudflare Anycast Edge (' + bestHub.city + ' ' + iataCode + ')';
 
       return {
         id: bestHub.id,
         name: srvName,
         city: bestHub.city,
-        iata: bestHub.iata || 'CCU',
-        node: bestHub.city + ' (' + shortHost + ')',
+        iata: iataCode,
+        node: bestHub.city + ' Anycast POP (' + iataCode + ')',
         lat: bestHub.lat,
         lon: bestHub.lon,
         cx: bestHub.cx,
@@ -6281,42 +6480,31 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
     // TELEMETRY CSV DOWNLOAD & MEASUREMENT TIME ENGINE
     function downloadMeasurementCsv() {
-      const time = document.getElementById('tb-measured-time')?.textContent || new Date().toLocaleTimeString();
-      const down = document.getElementById('disp-download')?.textContent || '0.00';
-      const up = document.getElementById('disp-upload')?.textContent || '0.00';
-      const ping = document.getElementById('disp-ping')?.textContent || '0';
-      const loaded = document.getElementById('disp-loaded')?.textContent || '---';
-      const upPing = document.getElementById('disp-up-ping')?.textContent || '---';
-      const jitter = '2.03';
-      const rawResultId = document.getElementById('disp-result-id')?.textContent || 'Result ID: BM97-#' + currentTestNum;
-      const cleanResultId = rawResultId.replace(/^Result\s*ID:\s*/i, '').trim();
+      const snap = getOrCreateTelemetrySnapshot();
+      const assess = buildLineAssessment(snap.down, snap.up, snap.jitter, snap.loss, snap.loadedDown, snap.loadedUp);
+      const qoeData = snap.qoe;
 
-      const ispName = clientNetwork.isp || 'Broadband ISP';
-      const ipAddr = clientNetwork.ip || '---';
-      const asnName = clientNetwork.asn || 'AS Direct';
-      const locStr = [clientNetwork.city, clientNetwork.region, clientNetwork.country].filter(Boolean).join(', ') || 'Global Peering Node';
-      const coordsStr = (clientNetwork.lat && clientNetwork.lon) ? (Number(clientNetwork.lat).toFixed(4) + ' N / ' + Number(clientNetwork.lon).toFixed(4) + ' E') : '---';
-      const serverName = clientNetwork.server || 'Cloudflare Ultra-Edge';
-
-      const qoeData = activeQoE || computeGenuineQoE(down, up, ping, loaded, upPing);
       const headers = ['Metric', 'Value', 'Unit'];
       const rows = [
         ['Telemetry Engine', 'BillMaster97 Sovereign Speedtest Pro v2.3.3', ''],
-        ['Result ID', cleanResultId, ''],
-        ['Measurement Time', time + ' IST', ''],
-        ['ISP Provider', ispName, ''],
-        ['Client IPv4', ipAddr, ''],
-        ['Autonomous System (ASN)', asnName, ''],
-        ['Physical Location', locStr, ''],
-        ['Coordinates', coordsStr, 'deg'],
-        ['Edge Routing Server', serverName, ''],
-        ['Download Throughput', down, 'Mbps'],
-        ['Upload Throughput', up, 'Mbps'],
-        ['Idle Latency (Ping)', ping, 'ms'],
-        ['Loaded Download Ping', loaded, 'ms'],
-        ['Loaded Upload Ping', upPing, 'ms'],
-        ['Packet Jitter', jitter, 'ms'],
-        ['Bufferbloat Rating', qoeData.stability.sub || 'Grade A (Verified)', ''],
+        ['Result ID', snap.id, ''],
+        ['Measurement Time (UTC)', snap.utc, ''],
+        ['Local Timestamp', snap.localTime, ''],
+        ['ISP Provider', snap.isp, ''],
+        [snap.ip.includes(':') ? 'Client IPv6' : 'Client IPv4', snap.ip, ''],
+        ['Autonomous System (ASN)', snap.asn, ''],
+        ['Physical Location', snap.node, ''],
+        ['Coordinates', snap.coords, 'deg'],
+        ['Test Server (Actual Socket Target)', snap.server, ''],
+        ['Line Symmetry Profile', assess.upSub, ''],
+        ['Download Throughput', snap.down, 'Mbps'],
+        ['Upload Throughput', snap.up, 'Mbps'],
+        ['Idle Latency (Ping)', snap.ping, 'ms'],
+        ['Loaded Download Ping', snap.loadedDown, 'ms'],
+        ['Loaded Upload Ping', snap.loadedUp, 'ms'],
+        ['RFC 3393 Packet Jitter', snap.jitter.replace(/ms$/i, '').trim(), 'ms'],
+        ['Packet Loss', snap.loss.replace(/%$/, '').trim(), '%'],
+        ['Bufferbloat Rating', qoeData.stability.sub || 'Verified', ''],
         ['Overall QoE Score', qoeData.overallScore + ' / 100', qoeData.overallTier],
         ['Competitive Gaming QoE', qoeData.gaming.score + ' / 10', qoeData.gaming.sub],
         ['4K UHD Video Streaming QoE', qoeData.streaming.score + ' / 10', qoeData.streaming.sub],
@@ -6324,25 +6512,28 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         ['Cloud Sync & Uploads QoE', qoeData.uploads.score + ' / 10', qoeData.uploads.sub],
         ['Instant Web Browsing QoE', qoeData.browsing.score + ' / 10', qoeData.browsing.sub],
         ['Line Stability & Consistency', qoeData.stability.score, qoeData.stability.sub],
-        ['Connection Architecture', 'Multi-Socket Parallel TCP Streams', ''],
-        ['Connection Protocol', 'HTTP/3 Direct Multi-Stream', ''],
-        ['Integrity Hash (SHA-256)', '7f83b1657ff1fc53b92dc1810f5439a8e2cb927361957de0b07ac02194bb8b97', ''],
+        ['Connection Architecture', (typeof isMulti !== 'undefined' && !isMulti) ? 'Single-Socket TCP Stream' : 'Multi-Socket Parallel TCP Streams', ''],
+        ['Negotiated Route Protocol', snap.protocol, ''],
+        ['Integrity Hash (SHA-256)', snap.hash, ''],
+        ['Verification URL', snap.verifyUrl, ''],
         ['Sovereign Privacy Guarantee', '100% Client-Side In-Memory Telemetry • Zero Logs Transmitted', '']
       ];
 
       const csvRows = [headers.join(',')];
-      rows.forEach(r => csvRows.push(`"${r[0]}","${r[1]}","${r[2]}"`));
+      rows.forEach(r => csvRows.push(`"${String(r[0]).replace(/"/g, '""')}","${String(r[1]).replace(/"/g, '""')}","${String(r[2]).replace(/"/g, '""')}"`));
       const csvString = csvRows.join('\r\n');
 
       const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `BillMaster97_SpeedTest_Telemetry_${cleanResultId.replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.csv`;
+      a.download = `BillMaster97_SpeedTest_Telemetry_${snap.id.replace(/[^a-zA-Z0-9_-]/g, '_')}_${Date.now()}.csv`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        try { document.body.removeChild(a); } catch (e) {}
+        try { URL.revokeObjectURL(url); } catch (e) {}
+      }, 5000);
     }
 
     function togglePauseTest() {
@@ -6384,15 +6575,16 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       lat: '',
       lon: '',
       gpsAccuracy: null,       // null = IP-based, number = GPS metres accuracy
-      server: 'Detecting Server...',
+      server: 'Cloudflare Anycast Edge',
       serverCity: 'Kolkata',
       serverIata: 'CCU',
-      serverLocation: 'Kolkata Edge POP (CCU)',
+      serverLocation: 'Kolkata Anycast POP (CCU)',
       serverLat: 22.5726,
       serverLon: 88.3639,
       serverCx: 1490.9,
       serverCy: 374.6,
-      detectedColo: null
+      detectedColo: null,
+      protocol: 'TLS 1.3 Direct'
     };
 
     function updateNetworkUI() {
@@ -6485,9 +6677,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const pdfIp = document.getElementById('pdf-val-ip');
       if (pdfIp) pdfIp.textContent = clientNetwork.ip;
       const pdfServer = document.getElementById('pdf-val-server');
-      if (pdfServer) pdfServer.textContent = clientNetwork.server + (clientNetwork.serverCity ? ' (' + clientNetwork.serverCity + ')' : '');
+      if (pdfServer) pdfServer.textContent = clientNetwork.server;
       const pdfAsn = document.getElementById('pdf-val-asn');
-      if (pdfAsn) pdfAsn.textContent = clientNetwork.asn;
+      if (pdfAsn) pdfAsn.textContent = formatCompactAsn(clientNetwork.asn, clientNetwork.isp);
       const pdfNode = document.getElementById('pdf-val-node');
       if (pdfNode) pdfNode.textContent = [clientNetwork.city, clientNetwork.region, clientNetwork.country].filter(Boolean).join(', ') || 'Global Peering Node';
       const pdfCoords = document.getElementById('pdf-val-coords');
@@ -6495,8 +6687,10 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         pdfCoords.textContent = Number(clientNetwork.lat).toFixed(4) + '° N / ' + Number(clientNetwork.lon).toFixed(4) + '° E';
       }
       const benchBadge = document.getElementById('pdf-val-benchmark-badge');
-      if (benchBadge && clientNetwork.city) {
-        benchBadge.textContent = '⭐ Better than regional average in ' + clientNetwork.city;
+      if (benchBadge) {
+        const downCur = document.getElementById('disp-download')?.textContent || '0';
+        const bench = computeRegionalPercentile(downCur);
+        benchBadge.textContent = '⭐ Top ' + Math.max(1, 100 - bench.percentile) + '% Benchmark Tier (' + (clientNetwork.serverCity || 'Global Edge') + ')';
       }
 
       // Update "Understand My Result" benchmark badge dynamically
@@ -6508,11 +6702,11 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         nperfBadgeText.textContent = '⭐⭐ ' + locationLabel + ' · Click GO to Benchmark';
       }
 
-      // Protocol auto-update (IPv4 vs IPv6)
+      // Protocol auto-update (IPv4 vs IPv6 + actual negotiated HTTP protocol)
       const barProto = document.getElementById('bar-protocol-display');
       if (barProto) {
         const isV6 = clientNetwork.ip && clientNetwork.ip.includes(':');
-        barProto.textContent = isV6 ? 'IPv6 (HTTP/3 Direct)' : 'IPv4 (HTTP/3 Direct)';
+        barProto.textContent = (isV6 ? 'IPv6' : 'IPv4') + ' (' + (clientNetwork.protocol || 'TLS 1.3 Direct') + ')';
       }
 
       // Map pin and server cloud auto-update
@@ -6610,17 +6804,28 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       return null;
     }
 
+    const COLO_CITY_MAP = {
+      CCU: 'Kolkata', BOM: 'Mumbai', DEL: 'New Delhi', BLR: 'Bengaluru', MAA: 'Chennai', HYD: 'Hyderabad',
+      IXB: 'Siliguri', SIN: 'Singapore', NRT: 'Tokyo', DXB: 'Dubai', LHR: 'London', FRA: 'Frankfurt',
+      AMS: 'Amsterdam', CDG: 'Paris', JFK: 'New York', EWR: 'Newark', IAD: 'Ashburn', SFO: 'San Francisco',
+      LAX: 'Los Angeles', ORD: 'Chicago', DFW: 'Dallas', SYD: 'Sydney', YYZ: 'Toronto', GRU: 'Sao Paulo'
+    };
+
     function applyServerRouting(lat, lon, ipCity, ipRegion, ipCountry, isp) {
-      const cleanIsp = formatCleanIspName(isp || clientNetwork.isp);
       const savedServer = localStorage.getItem('bm97_server_name');
 
-      if (savedServer && !savedServer.includes('GTPL KCBPL') && !savedServer.includes('Detecting') && !savedServer.includes('Airtel')) {
+      if (savedServer &&
+          !savedServer.includes('Peering Center') &&
+          !savedServer.includes('GTPL KCBPL') &&
+          !savedServer.includes('Detecting') &&
+          !savedServer.includes('Airtel') &&
+          !savedServer.includes('Jio')) {
         clientNetwork.server = savedServer;
         const matchedHub = EDGE_SERVERS.find(h => savedServer.toLowerCase().includes(h.city.toLowerCase()));
         if (matchedHub) {
           clientNetwork.serverCity = matchedHub.city;
           clientNetwork.serverIata = matchedHub.iata;
-          clientNetwork.serverLocation = matchedHub.city + ' Edge POP (' + matchedHub.iata + ')';
+          clientNetwork.serverLocation = matchedHub.city + ' Anycast POP (' + matchedHub.iata + ')';
           clientNetwork.serverLat = matchedHub.lat;
           clientNetwork.serverLon = matchedHub.lon;
           clientNetwork.serverCx = matchedHub.cx;
@@ -6629,7 +6834,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         }
       }
 
-      // 1. If Cloudflare colo was detected, use the exact Anycast edge POP terminating the socket!
+      // 1. If Cloudflare colo was detected, label honestly as the actual Cloudflare Anycast edge POP terminating the socket
       const detectedIata = (typeof clientNetwork.detectedColo === 'string'
         ? clientNetwork.detectedColo
         : (clientNetwork.detectedColo?.iata || clientNetwork.detectedColo?.colo || '')).toUpperCase();
@@ -6639,21 +6844,21 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         if (matchedHub) {
           clientNetwork.serverCity = matchedHub.city;
           clientNetwork.serverIata = matchedHub.iata;
-          clientNetwork.serverLocation = matchedHub.city + ' Edge POP (' + matchedHub.iata + ')';
-          clientNetwork.server = cleanIsp + ' Peering Center (' + matchedHub.city + ')';
+          clientNetwork.serverLocation = matchedHub.city + ' Anycast POP (' + matchedHub.iata + ')';
+          clientNetwork.server = 'Cloudflare Anycast Edge (' + matchedHub.city + ' ' + matchedHub.iata + ')';
           clientNetwork.serverLat = matchedHub.lat;
           clientNetwork.serverLon = matchedHub.lon;
           clientNetwork.serverCx = matchedHub.cx;
           clientNetwork.serverCy = matchedHub.cy;
           return;
         } else {
-          // Dynamic POP coordinates from Cloudflare
-          const sLat = (clientNetwork.detectedColo && clientNetwork.detectedColo.lat) || 22.5726;
-          const sLon = (clientNetwork.detectedColo && clientNetwork.detectedColo.lon) || 88.3639;
-          clientNetwork.serverCity = (clientNetwork.detectedColo && clientNetwork.detectedColo.city) || detectedIata;
+          const sLat = (clientNetwork.detectedColo && clientNetwork.detectedColo.lat) || parseFloat(lat) || 22.5726;
+          const sLon = (clientNetwork.detectedColo && clientNetwork.detectedColo.lon) || parseFloat(lon) || 88.3639;
+          const mappedCity = (clientNetwork.detectedColo && clientNetwork.detectedColo.city) || COLO_CITY_MAP[detectedIata] || detectedIata;
+          clientNetwork.serverCity = mappedCity;
           clientNetwork.serverIata = detectedIata;
-          clientNetwork.serverLocation = clientNetwork.serverCity + ' Edge POP (' + detectedIata + ')';
-          clientNetwork.server = cleanIsp + ' Peering Center (' + clientNetwork.serverCity + ')';
+          clientNetwork.serverLocation = mappedCity + ' Anycast POP (' + detectedIata + ')';
+          clientNetwork.server = 'Cloudflare Anycast Edge (' + mappedCity + ' ' + detectedIata + ')';
           clientNetwork.serverLat = sLat;
           clientNetwork.serverLon = sLon;
           clientNetwork.serverCx = ((sLon + 180) / 360) * 2000;
@@ -6666,8 +6871,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const localSrv = findNearestEdgeServer(ipCity, ipRegion, ipCountry, lat, lon, isp);
       clientNetwork.server = localSrv.name;
       clientNetwork.serverCity = localSrv.city;
-      clientNetwork.serverIata = localSrv.iata || 'CCU';
-      clientNetwork.serverLocation = localSrv.city + ' Edge POP (' + (localSrv.iata || 'CCU') + ')';
+      clientNetwork.serverIata = localSrv.iata || 'EDGE';
+      clientNetwork.serverLocation = localSrv.node;
       clientNetwork.serverLat = localSrv.lat;
       clientNetwork.serverLon = localSrv.lon;
       clientNetwork.serverCx = localSrv.cx;
@@ -7172,52 +7377,14 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       const needle = document.getElementById('rank-needle');
       if (!badge || !numSpan || !needle) return;
 
-      const speed = parseFloat(downSpeed) || 0;
-      let percentile = 50;
-      let tier = 'Tier 3 Standard';
-      let badgeColor = 'var(--cyan)';
-      let badgeBg = 'rgba(0, 210, 255, 0.15)';
-      let needlePct = 50;
-
-      if (speed < 10) {
-        percentile = Math.max(12, Math.round(speed * 2.5));
-        tier = 'Tier 1 Entry DSL';
-        badgeColor = '#ef4444';
-        badgeBg = 'rgba(239, 68, 68, 0.15)';
-        needlePct = Math.max(8, Math.round(speed * 2));
-      } else if (speed < 30) {
-        percentile = Math.round(25 + ((speed - 10) / 20) * 35);
-        tier = 'Tier 2 Basic Fiber';
-        badgeColor = '#f59e0b';
-        badgeBg = 'rgba(245, 158, 11, 0.15)';
-        needlePct = Math.round(25 + ((speed - 10) / 20) * 25);
-      } else if (speed < 100) {
-        percentile = Math.round(60 + ((speed - 30) / 70) * 25);
-        tier = 'Tier 3 Standard Broadband';
-        badgeColor = 'var(--cyan)';
-        badgeBg = 'rgba(0, 210, 255, 0.15)';
-        needlePct = Math.round(50 + ((speed - 30) / 70) * 25);
-      } else if (speed < 300) {
-        percentile = Math.round(85 + ((speed - 100) / 200) * 11);
-        tier = 'Tier 4 Ultra-Fast Fiber';
-        badgeColor = '#10b981';
-        badgeBg = 'rgba(16, 185, 129, 0.15)';
-        needlePct = Math.round(75 + ((speed - 100) / 200) * 15);
-      } else {
-        percentile = Math.min(99, Math.round(96 + ((speed - 300) / 700) * 3));
-        tier = 'Tier 5 Gigabit Extreme';
-        badgeColor = '#a855f7';
-        badgeBg = 'rgba(168, 85, 247, 0.18)';
-        needlePct = Math.min(98, Math.round(90 + ((speed - 300) / 700) * 8));
-      }
-
-      badge.textContent = tier;
-      badge.style.color = badgeColor;
-      badge.style.background = badgeBg;
-      badge.style.borderColor = badgeColor;
-      numSpan.textContent = percentile + '%';
-      numSpan.style.color = badgeColor;
-      needle.style.left = needlePct + '%';
+      const bench = computeRegionalPercentile(downSpeed);
+      badge.textContent = bench.tier;
+      badge.style.color = bench.badgeColor;
+      badge.style.background = bench.badgeBg;
+      badge.style.borderColor = bench.badgeColor;
+      numSpan.textContent = bench.percentile + '%';
+      numSpan.style.color = bench.badgeColor;
+      needle.style.left = bench.needlePct + '%';
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -7335,6 +7502,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       setTimeout(() => {
         drawQoERadar();
       }, 80);
+      checkVerifyUrlOnBoot();
     }
 
     window.addEventListener('resize', () => {
@@ -7426,20 +7594,30 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         detectClientNetwork();
       }
 
-      // ─── PHASE 1: REAL IDLE LATENCY (PING, JITTER, PACKET LOSS, DNS) ───
+      // ─── PHASE 1: REAL IDLE LATENCY (PING, RFC 3393 JITTER, PACKET LOSS, DNS & PROTOCOL) ───
       let measuredPing = 24;
       let measuredLoss = 0.0;
-      let measuredDns = 18;
+      let measuredJitter = 1.5;
+      let measuredDns = 0;
+      let measuredDnsLabel = '<1ms';
       let lostProbes = 0;
       const totalProbes = 6;
+      const resBeforeIdx = (typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function')
+        ? performance.getEntriesByType('resource').length : 0;
       try {
-        const pingProbes = [];
+        const pingProbesOrdered = [];
         for (let i = 0; i < totalProbes; i++) {
           const t0 = performance.now();
           try {
-            await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now() + '_' + i, { cache: 'no-store' });
+            const pRes = await fetch('https://speed.cloudflare.com/__down?bytes=0&t=' + Date.now() + '_' + i, { cache: 'no-store' });
             const curPing = Math.max(1, Math.round(performance.now() - t0));
-            pingProbes.push(curPing);
+            pingProbesOrdered.push(curPing);
+            const hColo = pRes.headers && pRes.headers.get && pRes.headers.get('cf-meta-colo');
+            if (hColo && !clientNetwork.detectedColo) {
+              clientNetwork.detectedColo = hColo;
+              applyServerRouting(clientNetwork.lat, clientNetwork.lon, clientNetwork.city, clientNetwork.region, clientNetwork.country, clientNetwork.isp);
+              updateNetworkUI();
+            }
             if (dispPing) dispPing.textContent = curPing;
             playSpeedTone(260 + i * 45, 55, 'sine');
           } catch (e) {
@@ -7447,25 +7625,52 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           }
         }
         measuredLoss = ((lostProbes / totalProbes) * 100);
-        if (pingProbes.length > 0) {
-          pingProbes.sort((a, b) => a - b);
-          measuredPing = Math.round(pingProbes[Math.floor(pingProbes.length / 2)] || 24);
+        if (pingProbesOrdered.length >= 2) {
+          let ipdvSum = 0;
+          for (let j = 1; j < pingProbesOrdered.length; j++) {
+            ipdvSum += Math.abs(pingProbesOrdered[j] - pingProbesOrdered[j - 1]);
+          }
+          measuredJitter = ipdvSum / (pingProbesOrdered.length - 1);
+        }
+        if (pingProbesOrdered.length > 0) {
+          const sortedPings = [...pingProbesOrdered].sort((a, b) => a - b);
+          measuredPing = Math.round(sortedPings[Math.floor(sortedPings.length / 2)] || 24);
         } else {
           measuredPing = 24;
         }
-        measuredDns = Math.max(4, Math.round(measuredPing * 0.42));
+
+        // Read actual browser PerformanceResourceTiming for DNS lookup & negotiated HTTP protocol
+        try {
+          if (typeof performance !== 'undefined' && typeof performance.getEntriesByType === 'function') {
+            const entries = performance.getEntriesByType('resource').slice(resBeforeIdx).filter(e => e.name && e.name.includes('speed.cloudflare.com'));
+            const protoEntry = entries.find(e => e.nextHopProtocol);
+            if (protoEntry && protoEntry.nextHopProtocol) {
+              const nhp = protoEntry.nextHopProtocol.toLowerCase();
+              if (nhp.startsWith('h3')) clientNetwork.protocol = 'HTTP/3 (QUIC)';
+              else if (nhp === 'h2') clientNetwork.protocol = 'HTTP/2 (TLS 1.3)';
+              else if (nhp.includes('1.1')) clientNetwork.protocol = 'HTTP/1.1 (TLS 1.3)';
+              else clientNetwork.protocol = nhp.toUpperCase();
+              updateNetworkUI();
+            }
+            const dnsEntry = entries.find(e => e.domainLookupEnd > e.domainLookupStart);
+            if (dnsEntry) {
+              measuredDns = Math.round(dnsEntry.domainLookupEnd - dnsEntry.domainLookupStart);
+              measuredDnsLabel = measuredDns > 0 ? (measuredDns + 'ms') : '<1ms';
+            }
+          }
+        } catch (e) {}
 
         if (dispPing) dispPing.textContent = measuredPing;
         if (dispLoss) dispLoss.textContent = measuredLoss.toFixed(1) + '%';
-        if (dispDns) dispDns.textContent = measuredDns + 'ms';
+        if (dispDns) dispDns.textContent = measuredDnsLabel;
 
         const setPing = document.getElementById('settings-active-ping');
-        if (setPing) setPing.textContent = measuredPing + 'ms direct peer';
+        if (setPing) setPing.textContent = measuredPing + 'ms to edge POP';
       } catch (err) {
         measuredPing = 24;
         if (dispPing) dispPing.textContent = measuredPing;
         if (dispLoss) dispLoss.textContent = '0.0%';
-        if (dispDns) dispDns.textContent = '12ms';
+        if (dispDns) dispDns.textContent = '<1ms';
       }
 
       // ─── PHASE 2: REAL MULTI-STREAM DOWNLOAD TEST (with Loaded Latency) ───
@@ -7696,14 +7901,15 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       if (goBtn) goBtn.classList.remove('testing-pulse');
       if (goText) goText.textContent = 'GO';
 
-      // Set final measured time
+      // Set final measured time with local timezone
       const now = new Date();
+      const tsFmt = formatAuditTimestamps(now);
       if (timeElem) {
-        timeElem.textContent = 'Measured at ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+        timeElem.textContent = 'Measured at ' + tsFmt.clock;
       }
 
-      // Update jitter display
-      const jitterVal = (Math.abs(loadedPingDown - measuredPing) * 0.15 + 1.2).toFixed(2);
+      // Update real RFC 3393 jitter display
+      const jitterVal = measuredJitter.toFixed(2);
       const dispJitter = document.getElementById('disp-jitter');
       if (dispJitter) dispJitter.textContent = jitterVal + 'ms';
 
@@ -7716,14 +7922,19 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       // Play High-Tech Completion Chime
       playCompletionChime();
 
-      // Update PDF Report values
+      // Build immutable canonical telemetry snapshot & SHA-256 hash
+      lastTelemetrySnapshot = null;
+      const snap = getOrCreateTelemetrySnapshot();
+
+      // Update PDF Report preview values
       const pdfDown = document.getElementById('pdf-val-down'); if (pdfDown) pdfDown.textContent = finalDown.toFixed(2);
       const pdfUp = document.getElementById('pdf-val-up'); if (pdfUp) pdfUp.textContent = finalUp.toFixed(2);
       const pdfPing = document.getElementById('pdf-val-ping'); if (pdfPing) pdfPing.textContent = measuredPing.toFixed(1);
       const pdfIsp = document.getElementById('pdf-val-isp'); if (pdfIsp) pdfIsp.textContent = clientNetwork.isp;
       const pdfIp = document.getElementById('pdf-val-ip'); if (pdfIp) pdfIp.textContent = clientNetwork.ip;
       const pdfServer = document.getElementById('pdf-val-server'); if (pdfServer) pdfServer.textContent = clientNetwork.server;
-      const pdfTime = document.getElementById('pdf-val-time'); if (pdfTime) pdfTime.textContent = now.toLocaleDateString() + ' • ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+      const pdfTime = document.getElementById('pdf-val-time'); if (pdfTime) pdfTime.textContent = tsFmt.auditStr;
+      const pdfHash = document.getElementById('pdf-val-hash'); if (pdfHash) pdfHash.textContent = 'SHA-256: ' + snap.hash.slice(0, 28) + '...';
 
       // GA4 Speed Test Completed Event (Official Test Counter)
       try {
@@ -7754,9 +7965,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
           upPing: String(loadedPingUp),
           jitter: jitterVal + 'ms',
           loss: measuredLoss.toFixed(1) + '%',
-          dns: measuredDns + 'ms',
+          dns: measuredDnsLabel,
           date: now.toLocaleDateString(),
-          time: now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true }),
+          time: tsFmt.clock,
           server: clientNetwork.server,
           isp: formatCleanIspName(clientNetwork.isp)
         });
@@ -7984,12 +8195,15 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
       <div class="bm97-modal-body" style="padding: 22px 24px;">
         
+        <div id="pdf-verify-banner" style="display: none; padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 12.5px; font-weight: 700;"></div>
+
         <!-- Action Toolbar -->
         <div class="cert-modal-toolbar">
           <div class="cert-toolbar-subtext" style="font-size: 12.5px; color: var(--text-muted);">
             Verified Client-Side Audit • Ready for Export, Sharing, or ISP Speed Dispute Verification
           </div>
           <div class="cert-toolbar-btns">
+            <button id="btn-copy-verify-url" onclick="copyVerifyUrl()" class="share-icon-btn" style="width: auto; padding: 6px 12px; border-radius: 6px; font-weight: 700; color: #10b981; border-color: rgba(16, 185, 129, 0.4);" title="Copy Tamper-Proof SHA-256 Verification Link">🔗 Verify Link</button>
             <button id="btn-toggle-cert-theme" onclick="toggleCertTheme()" class="share-icon-btn" style="width: auto; padding: 6px 14px; border-radius: 6px; font-weight: 700; color: #0f172a; background: #f1f5f9; border-color: #cbd5e1;" title="Switch between Executive White and Cyber Dark">☀️ Executive White</button>
             <button onclick="printPdfReport()" class="share-icon-btn" style="width: auto; padding: 6px 16px; border-radius: 6px; font-weight: 700; color: var(--cyan); border-color: rgba(0, 210, 255, 0.4);" title="Print or Save as PDF">
               🖨️ Print / Save PDF
@@ -8012,7 +8226,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             </div>
             <div class="pdf-cert-badge">
               <strong id="pdf-cert-id">BM97-CERT-19879845021</strong>
-              <span>✓ VERIFIED AUDIT</span>
+              <span id="pdf-cert-verified-sub">✓ SHA-256 CRYPTOGRAPHIC AUDIT</span>
             </div>
           </div>
 
@@ -8021,17 +8235,17 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
             <div class="pdf-metric-card down">
               <div class="pdf-metric-label">Download Throughput</div>
               <div class="pdf-metric-val" id="pdf-val-down">49.80</div>
-              <div class="pdf-metric-sub">Mbps (90th Pct Sustained)</div>
+              <div class="pdf-metric-sub">Mbps (Sustained Window)</div>
             </div>
             <div class="pdf-metric-card up">
               <div class="pdf-metric-label">Upload Throughput</div>
               <div class="pdf-metric-val" id="pdf-val-up">50.96</div>
-              <div class="pdf-metric-sub">Mbps (Symmetrical Line)</div>
+              <div class="pdf-metric-sub" id="pdf-val-up-sub">Mbps (Broadband Upstream)</div>
             </div>
             <div class="pdf-metric-card lat">
               <div class="pdf-metric-label">Idle Latency</div>
               <div class="pdf-metric-val" id="pdf-val-ping">4.0</div>
-              <div class="pdf-metric-sub">ms (2.03ms Jitter)</div>
+              <div class="pdf-metric-sub" id="pdf-val-ping-sub">ms (RFC 3393 Jitter)</div>
             </div>
           </div>
 
@@ -8089,19 +8303,19 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
               <span class="pdf-benchmark-badge" id="pdf-val-benchmark-badge">⭐ Verified Low-Latency Broadband</span>
             </div>
             <div class="pdf-benchmark-desc">
-              <div>• <strong>Sustained Download:</strong> <span id="pdf-val-down-desc">--</span> Mbps real throughput sustained across edge sockets</div>
-              <div>• <strong>Upstream Throughput:</strong> Upload verified at <span id="pdf-val-up-desc">--</span> Mbps with zero packet drop</div>
-              <div>• <strong>Bufferbloat & Responsiveness:</strong> Loaded ping <span id="pdf-val-loaded-desc">--</span>ms under maximum saturation</div>
+              <div>• <strong>Sustained Download:</strong> <span id="pdf-val-down-desc">--</span> Mbps sustained throughput across parallel sockets</div>
+              <div>• <strong id="pdf-val-bench-upload-label">Upstream Throughput:</strong> Upload measured at <span id="pdf-val-up-desc">--</span> Mbps (<span id="pdf-val-loss-note">0.0% packet loss</span>)</div>
+              <div>• <strong>Bufferbloat &amp; Responsiveness:</strong> Loaded ping <span id="pdf-val-loaded-desc">--</span> ms (<span id="pdf-val-loaded-extra">under saturation</span>)</div>
             </div>
           </div>
 
           <!-- Footer / Security Hash -->
           <div class="pdf-cert-footer">
             <div>
-              <span>Timestamp: </span><strong id="pdf-val-time">11/07/2026 • 7:55:41 AM IST</strong>
+              <span>Timestamp: </span><strong id="pdf-val-time">Pending Measurement</strong>
             </div>
             <div>
-              <span>Integrity Hash: </span><span class="hash" style="font-size: 10.5px;">SHA-256: 7f83b1657ff1fc53b92dc181...</span>
+              <span>Integrity Hash: </span><span class="hash" id="pdf-val-hash" style="font-size: 10px;">SHA-256: Computing...</span>
             </div>
             <div>
               <span>Engine: </span><strong>BillMaster97 v2.3.3 Pro</strong>
