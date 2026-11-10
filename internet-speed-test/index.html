@@ -6091,12 +6091,12 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     // ═══════════════════════════════════════════════════════════════════════
 
     function computeGenuineQoE(downMbps, upMbps, pingMs, loadedPingDownMs, loadedPingUpMs) {
-      const down = Math.max(0.1, parseFloat(downMbps) || 10);
-      const up = Math.max(0.1, parseFloat(upMbps) || 5);
+      const down = Math.max(0.05, parseFloat(downMbps) || 0.05);
+      const up = Math.max(0.05, parseFloat(upMbps) || 0.05);
       const ping = Math.max(1, parseFloat(pingMs) || 30);
       const loadedDown = Math.max(ping, parseFloat(loadedPingDownMs) || ping);
       const loadedUp = Math.max(ping, parseFloat(loadedPingUpMs) || ping);
-      const bufferbloatDiff = Math.max(0, loadedDown - ping);
+      const bufferbloatDiff = Math.max(0, loadedDown - ping, loadedUp - ping);
 
       // 1. Competitive Gaming (Target: low ping & minimal bufferbloat delay)
       let gScore = 10.0 - (ping / 15) * 0.9 - (bufferbloatDiff / 50) * 0.4;
@@ -6152,7 +6152,8 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
       let bSub = '<' + Math.max(10, Math.round(ping * 0.8)) + 'ms TTFB';
       if (bScore >= 9.5) bSub += ' · Instant Load';
       else if (bScore >= 8.5) bSub += ' · Very Snappy';
-      else bSub += ' · Standard Page Render';
+      else if (bScore >= 5.0) bSub += ' · Standard Page Render';
+      else bSub += ' · Slow Page Render';
 
       // 6. Line Stability & Bufferbloat (RFC 8290 full A+..F scale)
       let stScore = 99.8 - (bufferbloatDiff / 12) * 0.8 - (ping / 40) * 0.4;
